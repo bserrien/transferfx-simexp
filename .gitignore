@@ -52,6 +52,7 @@ rsconnect/
 simulation-data/*
 
 # personal folders not for github
+source/archive/*
 archive/*
 
 # targets package: don' track the _targets/ folder
