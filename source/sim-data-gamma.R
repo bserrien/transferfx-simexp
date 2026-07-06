@@ -1,23 +1,34 @@
 # simulate-data-gamma.R
 
-# Structure:
-# x_true ~ Gamma(mean = mu_x, CV = cv_x)
-# x_obs  = x_true * eta_x  [error distribution eta_x = "lognormal" or "gamma"]
-# mu_y   = exp(alpha + beta * log(x_true))  [log link]
-# y_true ~ Gamma(mean = mu_y, CV = cv_y)
-# y_obs  = y_true * eta_y  [error distribution eta_x = "lognormal" or "gamma"]
 
+#' sim_data_gamma
+#' 
+#' DGM for gamma-distributed soil variables (eg. ECEC). Structured as follows:
+#' `x_true ~ Gamma(mean = mu_x, CV = cv_x)`
+#' `mu_y   = exp(alpha + beta * log(x_true))`
+#' `y_true ~ Gamma(mean = mu_y, CV = cv_y)`
+#' `x_obs` = `x_true * eps_x`
+#' `y_obs  = y_true * eps_y`
+#' 
+#' @param N sample size
+#' @param mu_x mean of the predictor variable (= shape/rate)
+#' @param cv_x coefficient of variation of the predictor variable (= 1 / sqrt(shape))
+#' @param alpha intercept on log-scale
+#' @param beta slope on log-scale
+#' @param cv_y structural noise on log-scale
+#' @param cv_mex CV of the multiplicative measurement error (x)
+#' @param ratio_mey_mex ratio between the CV of the meas.err: cv_mey / cv_mex
+#' @param corr_error correlation between x- and y- measurement errors
 sim_data_gamma <- function(
-    N            = 200,
-    mu_x         = 5,      
-    cv_x         = 0.4, 
-    alpha        = 0,    # intercept on log-scale
-    beta         = 1,    # slope on log-scale
-    cv_y         = 0.05, # structural noise on log-scale
-    cv_mex       = 0.15, # CV of the multiplicative measurement error
-    ratio_mey_mex = 1, # ratio between the CV of the meas.err 
-    error_dist   = c("lognormal", "gamma"),
-    corr_error   = 0 # correlation between x- and y- measurement errors
+    N             = 200,
+    mu_x          = 5,      
+    cv_x          = 0.4, 
+    alpha         = 0,
+    beta          = 1,
+    cv_y          = 0.05,
+    cv_mex        = 0.15,
+    ratio_mey_mex = 1,
+    corr_error    = 0
 ) {
   stopifnot("mu_x must be > 0 (x_true is Gamma-distributed)." = mu_x >= 0)
   
@@ -50,45 +61,20 @@ gamma_shape_rate <- function(mean, cv) {
   list(shape = shape, rate = rate)
 }
 
+
 #' rmult_error
 #' 
 #' helper function: multiplicative error with E[eps] = 1 (unbiased) and requested CV, (Gaussian-copula construction)
-rmult_error <- function(N, cv, cv2, corr, dist, shape_gamma = 4) {
+rmult_error <- function(N, cv, cv2, corr, shape_gamma = 40) {
   
+  # Gaussian copula -> correlated uniforms -> gamma marginals, mean 1
   # bivariate standard-normal with correlation for use in copula's
   Sigma <- matrix(c(1, corr, corr, 1), 2, 2)
-  Z <- MASS::mvrnorm(N, mu = c(0, 0), Sigma = Sigma)
-  
-  if (dist == "lognormal") {
-    # sigma_log chosen so that Var(exp(eps)) matches the requested CV^2,
-    # with mu_log set so E[eps] = 1 exactly
-    sigma_log  <- sqrt(log(1 + cv^2))
-    mu_log     <- -sigma_log^2 / 2
-    eps1       <- exp(mu_log + sigma_log * Z[, 1])
-    sigma_log2 <- sqrt(log(1 + cv2^2))
-    mu_log2    <- -sigma_log2^2 / 2
-    eps2       <- exp(mu_log2 + sigma_log2 * Z[, 2])
-    eps        <- cbind(eps1, eps2)
-  } else if (dist == "gamma") {
-    # Gaussian copula -> correlated uniforms -> gamma marginals, mean 1
-    U     <- pnorm(Z)
-    rate1 <- shape_gamma
-    eps1  <- qgamma(U[, 1], shape = shape_gamma, rate = rate1)
-    eps2  <- qgamma(U[, 2], shape = shape_gamma, rate = shape_gamma)
-    eps   <- cbind(eps1, eps2)
-  }
+  Z     <- MASS::mvrnorm(N, mu = c(0, 0), Sigma = Sigma)
+  U     <- pnorm(Z)
+  eps1  <- qgamma(U[, 1], shape = shape_gamma, rate = shape_gamma)
+  eps2  <- qgamma(U[, 2], shape = shape_gamma, rate = shape_gamma)
+  eps   <- cbind(eps1, eps2)
   return(eps)
 }
-
-
-
-# Rationale for the error distribution choice:
-#   The analysis model uses log(x_obs) as the predictor. A LOG-NORMAL
-#   multiplicative error on x becomes NORMAL and ADDITIVE on the log scale:
-#       log(x_obs) = log(x_true) + eps,   eps ~ N(0, sigma_log^2)
-#   which matches the classical measurement-error assumption that SIMEX and
-#   most correction methods are built on. A GAMMA multiplicative error stays
-#   skewed on the log scale, so it's offered as a secondary option for
-#   stress-testing robustness to non-normal error, not as the default.
-
 
