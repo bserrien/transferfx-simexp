@@ -51,6 +51,7 @@ val_metrics_gamma <- function(df) {
       R2   = 1 - sum((y_obs - yhat)^2) / sum((y_obs - mean(y_obs))^2),
       SDPE = sd(yhat - y_obs),
       PICP = mean(between(y_obs, yhat_ll, yhat_ul)),
-      PNEG = mean(yhat < 0)
+      PNEG   = mean(yhat < 0),
+      PNEGll = mean(yhat_ll < 0)
     ) 
 }
