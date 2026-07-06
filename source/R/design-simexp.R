@@ -158,7 +158,7 @@ scenario_labeller_gamma <- function(df) {
 simexp_design5 <- expand_grid(
   sample_size     = c(100),
   # mu_x, cv_x are based on shape = 2.06, rate = 0.013 (ECEC data Eurofins)
-  mu_x            = 158.4615, 
+  mu_x            = c(158.4615, 5),
   cv_x            = 0.696733, 
   alpha           = 0,
   beta            = 1,

@@ -35,6 +35,7 @@ list(
       stan_files = c(here("source/stan/linreg.stan")),
       data = sim_data_gamma(
         N               = sample_size,
+        mu_x            = mu_x,
         ratio_cvmex_cvx = ratio_cvmex_cvx
       ),
       seed          = 123,
