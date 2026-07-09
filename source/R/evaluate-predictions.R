@@ -3,7 +3,6 @@
 #' @title eval_preds
 #' @param ... set of models to evaluate, passed as different arguments
 eval_preds <- function(..., fx_valmetrics) {
-  #browser()
   preds        <- list(...)
   names(preds) <- stringr::str_split_i(
     as.character(as.list(substitute(list(...)))[-1]),

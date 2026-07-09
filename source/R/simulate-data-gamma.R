@@ -21,8 +21,8 @@
 #' @param corr_error correlation between x- and y- measurement errors
 sim_data_gamma <- function(
     N               = 200,
-    mu_x            = 160,      
-    cv_x            = 0.69, 
+    mu_x            = 1,      
+    cv_x            = .5, 
     alpha           = 0,
     beta            = 1,
     cv_y            = 0.05,
@@ -59,7 +59,8 @@ sim_data_gamma <- function(
     x_true = x_true,
     y_true = y_true,
     x_obs  = x_obs,
-    y_obs  = y_obs
+    y_obs  = y_obs,
+    cv_mex = cv_mex # only for use in EIV-model with known CV
   )
   
   # additionally create an independent validation dataset (N = 1000)
