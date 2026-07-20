@@ -14,8 +14,6 @@ tar_visnetwork()
 tar_make()
 #tar_make(callr_function = NULL, use_crew = FALSE, as_job = FALSE)
 
-# total runtime of the pipeline (per target?)
-# ??????????????????????
 
 tar_meta(fields = warnings, complete_only = TRUE) %>% View()
 
@@ -69,5 +67,24 @@ mcmc_gammareg_Nsample100_Mux158.4615_CVx0.696733_Alpha0_Beta1_CVy0.05_Taux0.05_T
   filter(.rep == "3dd8f772c42420b2") %>%
   ggplot(aes(shape)) + 
   geom_histogram()
+
+
+tar_load(mcmc_gammareg_eiv_knowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0_162fe9cbcc197974)
+
+
+tar_load(mcmc_data_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0_dc6841fd92d1177a)
+
+tar_load(predeval_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0)
+
+
+
+tar_load(mcmc_gammareg_eiv_unknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0_162fe9cbcc197974)
+unique(mcmc_gammareg_eiv_unknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0_162fe9cbcc197974$.rep)
+mcmc_gammareg_eiv_unknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0_162fe9cbcc197974 %>%
+  filter(.rep == "e99fbf80fca2d92e") %>%
+  rename(chain = .chain) %>%
+  select(!contains("[")) %>% select(!contains(".")) %>% 
+  select(-c(lp__, shape_x, rate_x)) %>%
+  GGally::ggscatmat(color = "chain")
 
 
