@@ -69,26 +69,112 @@ U_2 &= \Phi_\mathcal{N}(Z_2) \\
 \end{align}
 $$
 
+In this experiment we focus on the effect of the sample size of the training dataset ($N$), the tails of the distribution of the measurement error and the ratio between the SD of the measurement error and the SD of the latent variable ($\tau_x$). Other parameter values are kept fixed:
 
+| Parameter              | Values                                    |
+|------------------------|-------------------------------------------|
+|$N$                     |`r unique(predeval_summary$sample_size)`   |
+|$\mu_x$                 |`r unique(predeval_summary$mux)`           |
+|$\sigma_x$              |`r unique(predeval_summary$sigmax)`        |
+|$\alpha$                |`r unique(predeval_summary$alpha)`         |
+|$\beta$                 |`r unique(predeval_summary$beta)`          |
+|$\sigma_y$              |`r unique(predeval_summary$sigmay_struct)` |
+|$\tau_x$                |`r unique(predeval_summary$taux)`          |
+|$\tau_{xy}$             |`r unique(predeval_summary$tauxy)`         |
+|$\rho$                  |`r unique(predeval_summary$corrme)`        |
+
+: Table: Parameter values for the scenario's of experiment 5.
+
+
+<br>
 
 ## Models
 
+We apply several models on the observed data to predict new observations. Contrary to the gaussian experiments, prediction occurs on the fly (during model fitting) because the closed-form expression for the latent values in the EIV models does not exist anymore. For the simulation experiment this is fine, but we need to find a true post-hoc solution for users later on so they don't have to fit a model again. I found a solution with help from Claude-AI but it was extremely slow.
+
 ### Linear regression
+
+We ignore the fact that the outcome variable is strictly positive variable and use simple linear regression. We include this model as a naive method and look at the proportion of samples for which the predicted value is negative or the prediction interval contains negative values. Priors are similar to the gaussian experiments:
+
+$$
+\begin{aligned}
+\beta_0 &\sim \mathcal{N}(0, 1^2) \\
+\beta_1 &\sim \mathcal{N}^+(1, 0.5^2) \\
+\sigma_y &\sim \log\mathcal{N}(0, 0.5) \\
+y_{\text{obs},i} &\sim \mathcal{N}(\beta_0 + \beta_1x_{\text{obs},i}, \sigma_y^2)
+\end{aligned}
+$$
 
 ### Linear regression using log-transformed values
 
+Same model as above but on log-transformed variables. 
+
+$$
+\begin{aligned}
+\beta_0 &\sim \mathcal{N}(0, 1^2) \\
+\beta_1 &\sim \mathcal{N}^+(1, 0.5^2) \\
+\sigma_y &\sim \log\mathcal{N}(0, 0.5) \\
+\mu_i &= \beta_0 + \beta_1\log(x_{\text{obs},i}) \\
+\log(y_{\text{obs},i}) &\sim \mathcal{N}(\mu_i, \sigma_y^2)
+\end{aligned}
+$$
+
 ### Gamma GLM
+
+We don't transform the outcome variable but assume it is Gamma-distributed with shape parameter $\alpha$ and rate $\alpha/\mu_i$, the log expected value follows a linear function of the log of the non-reference method:
+
+$$
+\begin{aligned}
+\beta_0 &\sim \mathcal{N}(0, 1^2) \\
+\beta_1 &\sim \mathcal{N}^+(1, 0.5^2) \\
+\alpha &\sim \log\mathcal{N}(0, 1) \\
+\mu_i &= \exp(\beta_0 + \beta_1 \log(x_{obs,i})) \\
+y_{\text{obs},i} &\sim \mathcal{G}(\alpha, \alpha/\mu_i)
+\end{aligned}
+$$
 
 ### Gamma EIV-model with known CV of the measurement error
 
+We take the measurement error in the non-reference method into account. In this model we assume we have knowledge on the exact value of the CV of the measurement error ($CV_{\epsilon_X}$). The model and the priors are as follows:
+
+$$
+\begin{aligned}
+\mathrm{priors}\\
+\beta_0 &\sim \mathcal{N}(0, 1^2) \\
+\beta_1 &\sim \mathcal{N}^+(1, 0.5^2) \\
+\alpha &\sim \log\mathcal{N}(0, 1) \\
+\mu_X &\sim \log\mathcal{N}(0, 1) \\
+CV_X &\sim \log\mathcal{N}(0, 1) \\
+
+\mathrm{latent} \\
+x_{true,i} &\sim \mathcal{G}(CV_X^{-2}, CV_X^{-2}/\mu_X)\\
+x_{\text{obs},i} &\sim \mathcal{G}(CV_{\epsilon_X}^{-2}, CV_{\epsilon_X}^{-2}/x_{true,i}) \\
+
+\mathrm{regression}\\
+\mu_i &= \exp(\beta_0 + \beta_1 \log(x_{true,i})) \\
+y_{\text{obs},i} &\sim \mathcal{G}(\alpha, \alpha/\mu_i)
+
+\end{aligned}
+$$
+
 ### Gamma EIV-model with unknown CV of the measurement error
 
+The only difference with the above model is that we don't have exact knowledge on the CV of the measurement error but we specify a prior distribution for it (we actually specify a prior for the gamma shape parameter directly):
+
+$$
+CV_{\epsilon_X}^{-2} \sim \log\mathcal{N}(0, 1)
+$$
 
 <br>
 
 ## Results
 
 ### Predictions
+
+```{r}
+
+```
+
 
 ### Model diagnostics: MCMC $\hat{R}$
 
