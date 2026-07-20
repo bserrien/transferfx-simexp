@@ -12,8 +12,12 @@ tar_option_set(
   controller = crew_controller_local(workers = 5)
 )
 tar_source(
-  files = here("source", "R")
+  files = c(here("source/R/design-simexp-gamma.R"),
+            here("source/R/simulate-data-gamma.R"),
+            here("source/R/evaluate-predictions-gamma.R"),
+            here("source/R/utils.R"))
 )
+rm(tidy_scenario, reg_dilution, scenario_labeller_gamma)
 
 labs <- colnames(simexp_design5)[grepl("_label", colnames(simexp_design5))]
 
@@ -32,13 +36,14 @@ list(
     # the function sim_data_gamma returns a training and a validation dataset
     tar_stan_mcmc_rep_draws(
       name       = mcmc,
-      stan_files = c(here("source/stan/linreg.stan"),
-                     here("source/stan/linreg_logtrafo.stan"),
-                     here("source/stan/gammareg.stan")),
+      stan_files = c(here("source/stan/gamma_linreg.stan"),
+                     here("source/stan/gamma_linreglogtrafo.stan"),
+                     here("source/stan/gammareg.stan"),
+                     here("source/stan/gammareg_eiv_knowncvmex.stan"),
+                     here("source/stan/gammareg_eiv_unknowncvmex.stan")),
       data = sim_data_gamma(
-        N               = sample_size,
-        mu_x            = mu_x,
-        ratio_cvmex_cvx = ratio_cvmex_cvx
+        N    = sample_size,
+        cv_y = cv_y
       ),
       seed          = 123,
       chains        = 4, parallel_chains = 4,
@@ -51,48 +56,65 @@ list(
       stderr = R.utils::nullfile()
     ),
     
-    # evaluate predictions
+    # get prediction summaries per model
     tar_target(preds_linreg,
-               predict_linreg(mcmc_linreg, mcmc_data),
-               pattern = map(mcmc_linreg, mcmc_data)),
+               summarise_predictions(mcmc_gamma_linreg, mcmc_data),
+               pattern = map(mcmc_gamma_linreg, mcmc_data)),
     tar_target(preds_linreglogtrafo,
-               predict_linreg_logtrafo(mcmc_linreg_logtrafo, mcmc_data),
-               pattern = map(mcmc_linreg_logtrafo, mcmc_data)),
+               summarise_predictions(mcmc_gamma_linreglogtrafo, mcmc_data),
+               pattern = map(mcmc_gamma_linreglogtrafo, mcmc_data)),
     tar_target(preds_gammareg,
-               predict_gammareg(mcmc_gammareg, mcmc_data),
+               summarise_predictions(mcmc_gammareg, mcmc_data),
                pattern = map(mcmc_gammareg, mcmc_data)),
+    tar_target(preds_gammaregeivknowncvmex,
+               summarise_predictions(mcmc_gammareg_eiv_knowncvmex, mcmc_data),
+               pattern = map(mcmc_gammareg_eiv_knowncvmex, mcmc_data)),
+    tar_target(preds_gammaregeivunknowncvmex,
+               summarise_predictions(mcmc_gammareg_eiv_unknowncvmex, mcmc_data),
+               pattern = map(mcmc_gammareg_eiv_unknowncvmex, mcmc_data)),
+    
+    #evaluate predictions
     tar_target(
       predeval,
-      eval_preds(preds_linreg, preds_linreglogtrafo, preds_gammareg,
-                 fx_valmetrics = val_metrics_gamma)
+      eval_preds_gamma(preds_linreg, preds_linreglogtrafo,
+                       preds_gammareg, preds_gammaregeivknowncvmex,
+                       preds_gammaregeivunknowncvmex)
     ),
     
     # MCMC-diagnostics
-    tar_target(mcmcdx_linreg, 
-               mcmc_dx(mcmc_linreg), 
-               pattern = map(mcmc_linreg)),
-    tar_target(mcmcdx_linreglogtrafo, 
-               mcmc_dx(mcmc_linreg_logtrafo), 
-               pattern = map(mcmc_linreg_logtrafo)),
+    tar_target(mcmcdx_linreg,
+               mcmc_dx(mcmc_gamma_linreg),
+               pattern = map(mcmc_gamma_linreg)),
+    tar_target(mcmcdx_linreglogtrafo,
+               mcmc_dx(mcmc_gamma_linreglogtrafo),
+               pattern = map(mcmc_gamma_linreglogtrafo)),
     tar_target(mcmcdx_gammareg,
                mcmc_dx(mcmc_gammareg),
                pattern = map(mcmc_gammareg)),
+    tar_target(mcmcdx_gammaregeivknowncvmex,
+               mcmc_dx(mcmc_gammareg_eiv_knowncvmex),
+               pattern = map(mcmc_gammareg_eiv_knowncvmex)),
+    tar_target(mcmcdx_gammaregeivunknowncvmex,
+               mcmc_dx(mcmc_gammareg_eiv_unknowncvmex),
+               pattern = map(mcmc_gammareg_eiv_unknowncvmex)),
     tar_target(
       mcmcdx,
-      combine_mcmcdx(mcmcdx_linreg, mcmcdx_linreglogtrafo, mcmcdx_gammareg)
+      combine_mcmcdx(mcmcdx_linreg, mcmcdx_linreglogtrafo, mcmcdx_gammareg,
+                     mcmcdx_gammaregeivknowncvmex, 
+                     mcmcdx_gammaregeivunknowncvmex)
     )
   ),
   
   # combine results across scenario's
   tar_combine(
     predeval_summary,
-    mapped[["predeval"]], 
-    command = bind_rows(!!!.x, .id = "scenario")
+    mapped[["predeval"]],
+    command = bind_rows(!!!.x, .id = "scenario") %>% tidy_scenario_gamma()
   ),
   tar_combine(
     mcmcdx_summary,
     mapped[["mcmcdx"]],
-    command = bind_rows(!!!.x, .id = "scenario")
+    command = bind_rows(!!!.x, .id = "scenario") %>% tidy_scenario_gamma()
   )
 )
 

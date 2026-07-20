@@ -37,12 +37,12 @@ scenario_labeller_gamma <- function(df) {
 
 
 simexp_design5 <- expand_grid(
-  sample_size     = 200,
+  sample_size     = c(100, 200, 500),
   mu_x            = 1,
   cv_x            = .5, 
   alpha           = 0,
   beta            = 1,
-  cv_y            = c(0.01, 0.05),
+  cv_y            = c(0.01, 0.05, 0.10, 0.20),
   ratio_cvmex_cvx = 0.05,
   ratio_mey_mex   = 1,
   corr_error      = 0
