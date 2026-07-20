@@ -53,16 +53,6 @@ sim_data_gamma <- function(
   x_obs <- x_true * eps1
   y_obs <- y_true * eps2
   
-  # list for use in STAN models
-  df_stan <- list(
-    N      = N,
-    x_true = x_true,
-    y_true = y_true,
-    x_obs  = x_obs,
-    y_obs  = y_obs,
-    cv_mex = cv_mex # only for use in EIV-model with known CV
-  )
-  
   # additionally create an independent validation dataset (N = 1000)
   Nval       <- 1000
   x_true_val <- rgamma(Nval, shape = cv_x^(-2), rate = cv_x^(-2) / mu_x)
@@ -74,6 +64,8 @@ sim_data_gamma <- function(
   eps2_val   <- qgamma(Uval[, 2], shape = cv_mey^(-2), rate = cv_mey^(-2))
   x_obs_val  <- x_true_val * eps1_val
   y_obs_val  <- y_true_val * eps2_val
+  
+  
   data_val <- data.frame(
     uniqueid = 1:Nval, # observation ID, useful for joining
     y_true   = y_true_val,
@@ -81,8 +73,23 @@ sim_data_gamma <- function(
     x_true   = x_true_val,
     x_obs    = x_obs_val
   )
-  df_stan$validation_data <- data_val
-
+  
+  # list for use in STAN models
+  df_stan <- list(
+    N      = N,
+    x_true = x_true, # not used by STAN
+    y_true = y_true, # not used by STAN
+    x_obs  = x_obs,
+    y_obs  = y_obs,
+    cv_mex = cv_mex, # only for use in EIV-model with known CV
+    # additional data for prediction-on-the-fly for new observations
+    N_new      = Nval,
+    x_true_new = x_true_val, # not used by STAN
+    y_true_new = y_true_val, # not used by STAN
+    x_obs_new  = x_obs_val,
+    y_obs_new  = y_obs_val   # not used by STAN
+  )
+  
   return(df_stan)
 }
 
