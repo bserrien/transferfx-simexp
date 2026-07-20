@@ -1,0 +1,132 @@
+---
+title: "Simulation experiment (5)"
+format: 
+  html:
+    embed-resources: true
+toc: true
+---
+
+```{r packages, echo = F}
+library(tidyverse) |> suppressPackageStartupMessages()
+library(flextable) |> suppressPackageStartupMessages()
+library(targets) |> suppressPackageStartupMessages()
+library(tarchetypes) |> suppressPackageStartupMessages()
+library(here) |> suppressPackageStartupMessages()
+
+# set the _target store library of the project (for interactive use)
+prj_store <- here("store_simexp5")
+tar_load(predeval_summary, store = prj_store)
+nrep <- length(unique(predeval_summary$.rep)) 
+```
+
+
+## Design of the experiment
+
+The design of the experiment is analogous to the experiment with normally distributed data, but some alterations were made to accommodate strictly postive variables (eg. ECEC, bulk density, ...).
+
+We simulate data according to the following method (notation: $X$ = non-reference method, $Y$ = reference method). We first simulate a latent (true) value for the non-reference method using a Gamma distribution with shape parameter $\alpha$ and rate parameter $\beta$. The Gamma distribution parameters are related to the mean and coefficient of variation ($CV = \sigma/\mu$) of $X$ and we specify those to create a scenario:
+
+$$
+\begin{align}
+\alpha &= CV_X^{-2} \\
+\beta &=  \frac{CV_X^{-2}}{\mu_X} \\
+X_{\mathrm{true}} &\sim \mathcal{G}(\alpha, \beta)
+\end{align}
+$$
+
+We then use this value to simulate a value for the latent reference method $Y$, assuming a linear relation between both methods on the log-scale and some structural noise that is not due to measurement error. This structural noise needs to be multiplicative to avoid negative values; we sample $Y$ therefore from a Gamma distribution with a shape parameter reflecting the residual coefficient of variation (conditional on $X$; $CV_{Y|X}$):
+
+$$
+\begin{align}
+\mu_Y &= \exp\left(\gamma_0 + \gamma_1\log(X_{\mathrm{true}})\right) \\
+Y_{\mathrm{true}} &\sim \mathcal{G}\left(CV_{Y|X}^{-2}, \frac{CV_{Y|X}^{-2}}{\mu_Y}\right)
+\end{align}
+$$
+
+We then add measurement noise to both methods (resulting from both field and lab measurement processes). Again, the noise is multiplicative ($X_{\mathrm{obs}} = X_{\mathrm{true}}\epsilon_u$, $Y_{\mathrm{obs}} = Y_{\mathrm{true}}\epsilon_v$) to avoid negative values and we take Gamma-distributed noises with expected values 1 (unbiased noise). Just like in the gaussian case, the measurement noise magnitudes are expressed as fractions of the $CV$ of the latent $X$:
+
+$$
+\begin{aligned}
+CV_{\epsilon_u} &= \tau_xCV_X \\
+CV_{\epsilon_v} &= \tau_{xy}CV_{\epsilon_u}
+\end{aligned}
+$$
+
+We allow for correlated measurement noise between both methods using a Gaussian copula; we start by sampling a bivariate variable $Z$ with zero mean, unit variance and correlation coefficient $\rho$, this variable is then transformed to the unit-interval by means of the standard-normal CDF $\Phi_\mathcal{N}$ and then transformed to a Gamma-distributed measurement error by means of the Gamma quantile function $\Phi_\mathcal{G}$:
+
+$$
+\begin{align}
+\begin{pmatrix} Z_1\\ Z_2 \end{pmatrix} 
+&\sim \mathcal{N}
+\left(
+\begin{pmatrix} 0\\ 0 \end{pmatrix},
+\begin{pmatrix} 1 & \rho \\ \rho & 1 \end{pmatrix}
+\right) \\
+U_1 &= \Phi_\mathcal{N}(Z_1) \\
+U_2 &= \Phi_\mathcal{N}(Z_2) \\
+\epsilon_u &= \Phi_\mathcal{G}^{-1}(CV_{\epsilon_u}^{-2}, CV_{\epsilon_u}^{-2}) \\
+\epsilon_v &= \Phi_\mathcal{G}^{-1}(CV_{\epsilon_v}^{-2}, CV_{\epsilon_v}^{-2})
+\end{align}
+$$
+
+
+
+## Models
+
+### Linear regression
+
+### Linear regression using log-transformed values
+
+### Gamma GLM
+
+### Gamma EIV-model with known CV of the measurement error
+
+### Gamma EIV-model with unknown CV of the measurement error
+
+
+<br>
+
+## Results
+
+### Predictions
+
+### Model diagnostics: MCMC $\hat{R}$
+
+The following figures display the $\hat{R}$ statistic of the MCMC for each of the model parameters. The red dashed lines are at 1.00 and 1.01. The boxplots are aggregated across scenario's. The Gamma EIV-model with unknown $CV$ of the measurement error suffers from poor mixing.
+
+```{r mcmc-dx, echo = F, warning = F}
+tar_load(mcmcdx_summary,  store = prj_store)
+
+mcmcdx_summary %>%
+  select(-c(sample_size, mux, cvx, alpha, beta, 
+            cvy, taux, tauxy, corr_mexy)) %>%
+  pivot_longer(-c(.rep, model), names_to = "parameter", values_to = "Rhat") %>%
+  filter(!is.na(Rhat)) %>%
+  mutate(
+    model = factor(
+      model, c("linreg","linreglogtrafo","gammareg",
+               "gammaregeivknowncvmex","gammaregeivunknowncvmex"),
+      c("Linear regression","Linear regression\n(logtransformed data)",
+        "Gamma GLM","Gamma EIV\n(known CV mex)","Gamma EIV\n(prior on CV mex)")
+    )
+  ) %>%
+  ggplot(aes(Rhat, parameter)) +
+  facet_wrap(~ model) +
+  geom_boxplot() +
+  geom_vline(xintercept = c(1.00, 1.01), lty = 2, color = "red") +
+  theme_minimal()
+```
+
+Looking at the MCMC samples from 1 run of this model also reveals the same issue as in the gaussian EIV-model: high negative correlated parameters.
+
+```{r, warning=F}
+tar_load(mcmc_gammareg_eiv_unknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0_162fe9cbcc197974, store = prj_store)
+mcmc_gammareg_eiv_unknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0_162fe9cbcc197974 %>%
+   filter(.rep == "e99fbf80fca2d92e") %>%
+   rename(chain = .chain) %>%
+   select(!contains("[")) %>% select(!contains(".")) %>% 
+   select(-c(lp__, shape_x, rate_x)) %>%
+   GGally::ggscatmat(color = "chain", corMethod = "spearman")
+```
+
+
