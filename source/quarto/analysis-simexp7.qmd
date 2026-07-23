@@ -1,0 +1,87 @@
+---
+title: "Simulation experiment (7)"
+format: 
+  html:
+    embed-resources: true
+toc: true
+---
+
+```{r packages, echo = F}
+library(tidyverse) |> suppressPackageStartupMessages()
+library(flextable) |> suppressPackageStartupMessages()
+library(targets) |> suppressPackageStartupMessages()
+library(tarchetypes) |> suppressPackageStartupMessages()
+library(here) |> suppressPackageStartupMessages()
+
+# set the _target store library of the project (for interactive use)
+prj_store <- here("store_simexp7")
+```
+
+
+## Design of the experiment
+
+Analogous to experiment 5. Here we look at the effect of different coefficient of variation of the measurement errors between the training and validation data. We also add another EIV model where we assume we have knowledge of the $CV$ in both the training and the validation data.
+
+```{r, echo=F}
+tar_load(predeval_summary, store = prj_store)
+nrep <- length(unique(predeval_summary$.rep)) 
+```
+
+| Parameter              | Values                                      |
+|------------------------|---------------------------------------------|
+|$N$                     |`r unique(predeval_summary$sample_size)`     |
+|$\mu_X$                 |`r unique(predeval_summary$mux)`             |
+|$CV_X$                  |`r unique(predeval_summary$cvx)`             |
+|$\alpha$                |`r unique(predeval_summary$alpha)`           |
+|$\beta$                 |`r unique(predeval_summary$beta)`            |
+|$CV_{Y|X}$              |`r unique(predeval_summary$cvy)`             |
+|$\tau_x$                |`r unique(predeval_summary$taux)`            |
+|$\tau_{xy}$             |`r unique(predeval_summary$tauxy)`           |
+|$\rho$                  |`r unique(predeval_summary$corr_mexy)`       |
+|$\frac{CV_{validation}}{CV_{train}}$ |`r unique(predeval_summary$ratio_cvme)` |
+
+: Table: Parameter values for the scenario's of experiment 7.
+
+
+## Results
+
+### Predictions
+
+The figure below shows the results. The findings are similar to the gaussian experiment: the model where we know the $CV$ of the measurement error in both the training and the validation data gives better coverage levels than the other models for scenario's where the $CV$ differs.
+
+```{r, echo=F}
+#| label: fig-calibration1
+#| fig-cap: "Results of the simulation experiment: effect of ratio between CV of the measurement error between the validation and training data. Each facet has a different y-axis because the calibration metrics are on different scales."
+
+predeval_summary %>%
+  pivot_longer(
+    c(PICP, MAE, MPE, RMSE, R2, SDPE), 
+    names_to = "metric", values_to = "value"
+  ) %>% 
+  mutate(
+    metric = factor(metric, c("MPE","MAE","RMSE","R2","SDPE","PICP")),
+    model = factor(
+      model, c("linreg","linreglogtrafo","gammareg",
+               "gammaregeivknowncvmex","gammaregeivknowncvmexval",
+               "gammaregeivunknowncvmex"),
+      c("Linear regression","Linear regression\n(logtransformed data)",
+        "Gamma GLM",
+        "Gamma EIV\n(known CV mex training)",
+        "Gamma EIV\n(known CV mex training+validation)",
+        "Gamma EIV\n(prior on CV mex)")
+    )
+  ) %>%
+  ggplot(aes(factor(ratio_cvme), value, colour = model)) +
+  facet_wrap(~ metric, scales = "free_y") +
+  geom_boxplot() +
+  geom_point(position = position_jitterdodge(.1, 0)) +
+  labs(
+    title = "calibration metrics", y = "",
+    x = "ratio between CV of measurement error in validation vs. training data",
+    color = "Models"
+  ) +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"),
+        legend.position = "bottom")
+```
+
