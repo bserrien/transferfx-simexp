@@ -28,7 +28,8 @@ sim_data_gamma <- function(
     cv_y            = 0.05,
     ratio_cvmex_cvx = 0.05,
     ratio_mey_mex   = 1,
-    corr_error      = 0
+    corr_error      = 0,
+    ratio_cvme_val_train = 1
 ) {
   
   # latent predictor ~ Gamma()
@@ -55,13 +56,15 @@ sim_data_gamma <- function(
   
   # additionally create an independent validation dataset (N = 1000)
   Nval       <- 1000
+  cv_mex_val <- cv_mex * ratio_cvme_val_train
+  cv_mey_val <- cv_mey * ratio_cvme_val_train
   x_true_val <- rgamma(Nval, shape = cv_x^(-2), rate = cv_x^(-2) / mu_x)
   mu_y_val   <- exp(alpha + beta * log(x_true_val))
   y_true_val <- rgamma(Nval, shape = cv_y^(-2), rate = cv_y^(-2) / mu_y_val)
   Zval       <- MASS::mvrnorm(Nval, mu = c(0, 0), Sigma = Sigma)
   Uval       <- pnorm(Z)
-  eps1_val   <- qgamma(Uval[, 1], shape = cv_mex^(-2), rate = cv_mex^(-2))
-  eps2_val   <- qgamma(Uval[, 2], shape = cv_mey^(-2), rate = cv_mey^(-2))
+  eps1_val   <- qgamma(Uval[, 1], shape=cv_mex_val^(-2), rate=cv_mex_val^(-2))
+  eps2_val   <- qgamma(Uval[, 2], shape=cv_mey_val^(-2), rate=cv_mey_val^(-2))
   x_obs_val  <- x_true_val * eps1_val
   y_obs_val  <- y_true_val * eps2_val
   
@@ -87,7 +90,8 @@ sim_data_gamma <- function(
     x_true_new = x_true_val, # not used by STAN
     y_true_new = y_true_val, # not used by STAN
     x_obs_new  = x_obs_val,
-    y_obs_new  = y_obs_val   # not used by STAN
+    y_obs_new  = y_obs_val,   # not used by STAN
+    cv_mex_val = cv_mex_val  # only for use in the EIV-model with known CV in the validation data
   )
   
   return(df_stan)

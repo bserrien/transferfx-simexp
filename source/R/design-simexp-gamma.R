@@ -63,5 +63,18 @@ simexp_design6 <- expand_grid(
 ) %>% scenario_labeller_gamma()
 
 
+# experimental parameters for simexp7: ratio_cvme_train_test
+simexp_design7 <- expand_grid(
+  sample_size     = 200,
+  mu_x            = 1,
+  cv_x            = .5,
+  alpha           = 0,
+  beta            = 1,
+  cv_y            = 0.05,
+  ratio_cvmex_cvx = 0.05,
+  ratio_mey_mex   = 1,
+  corr_error      = 0,
+  ratio_cvme_train_test = c(0.8, 1, 1.2, 1.5)
+) %>% scenario_labeller_gamma()
 
 
