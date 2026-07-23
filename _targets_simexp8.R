@@ -47,32 +47,42 @@ list(
     reps          = 1,
     stdout = R.utils::nullfile(),
     stderr = R.utils::nullfile()
-  )
+  ),
   
-  # # get prediction summaries per model
-  # tar_target(preds_linreg,
-  #            summarise_predictions(mcmc_ECEC_linreg, mcmc_data),
-  #            pattern = map(mcmc_gamma_linreg, mcmc_data)),
-  # tar_target(preds_linreglogtrafo,
-  #            summarise_predictions(mcmc_ECEC_linreglogtrafo, mcmc_data),
-  #            pattern = map(mcmc_gamma_linreglogtrafo, mcmc_data)),
-  # tar_target(preds_gammareg,
-  #            summarise_predictions(mcmc_ECEC_gammareg, mcmc_data),
-  #            pattern = map(mcmc_gammareg, mcmc_data)),
-  # tar_target(preds_gammaregeivknowncvmex,
-  #            summarise_predictions(mcmc_ECEC_gammareg_eiv_knowncvmex, mcmc_data),
-  #            pattern = map(mcmc_gammareg_eiv_knowncvmex, mcmc_data)),
-  # tar_target(preds_gammaregeivunknowncvmex,
-  #            summarise_predictions(mcmc_ECEC_gammareg_eiv_unknowncvmex, mcmc_data),
-  #            pattern = map(mcmc_gammareg_eiv_unknowncvmex, mcmc_data)),
-  # 
-  # # evaluate predictions
-  # tar_target(
-  #   predeval,
-  #   eval_preds_gamma(preds_linreg, preds_linreglogtrafo,
-  #                    preds_gammareg, preds_gammaregeivknowncvmex,
-  #                    preds_gammaregeivunknowncvmex)
-  # ),
+  # get prediction summaries per model
+  tar_target(
+    preds_linreg,
+    summarise_predictions(mcmc_ECEC_linreg, mcmc_data),
+    pattern = map(mcmc_ECEC_linreg, mcmc_data)
+  ),
+  tar_target(
+    preds_linreglogtrafo,
+    summarise_predictions(mcmc_ECEC_linreglogtrafo, mcmc_data),
+    pattern = map(mcmc_ECEC_linreglogtrafo, mcmc_data)
+  ),
+  tar_target(
+    preds_gammareg,
+    summarise_predictions(mcmc_ECEC_gammareg, mcmc_data),
+    pattern = map(mcmc_ECEC_gammareg, mcmc_data)
+  ),
+  tar_target(
+    preds_gammaregeivknowncvmex,
+    summarise_predictions(mcmc_ECEC_gammareg_eiv_knowncvmex, mcmc_data),
+    pattern = map(mcmc_ECEC_gammareg_eiv_knowncvmex, mcmc_data)
+  ),
+  tar_target(
+    preds_gammaregeivunknowncvmex,
+    summarise_predictions(mcmc_ECEC_gammareg_eiv_unknowncvmex, mcmc_data),
+    pattern = map(mcmc_ECEC_gammareg_eiv_unknowncvmex, mcmc_data)
+  ),
+
+  # evaluate predictions
+  tar_target(
+    predeval,
+    eval_preds_gamma(preds_linreg, preds_linreglogtrafo,
+                     preds_gammareg, preds_gammaregeivknowncvmex,
+                     preds_gammaregeivunknowncvmex)
+  )
   # 
   # # MCMC-diagnostics
   # tar_target(mcmcdx_linreg,
