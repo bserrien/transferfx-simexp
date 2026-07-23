@@ -57,3 +57,10 @@ archive/*
 
 # targets package: don' track the _targets/ folder
 # separate .gitignore file
+
+# cmdstanr: don't track the executables
+source/stan/*.exe
+
+
+
+
