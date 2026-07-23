@@ -1,4 +1,4 @@
-// gamma EIV-regression model for Austrian ECEC data
+// gamma EIV-regression model for real ECEC data
 
 data {
   int<lower=1> N;            // number of observations
@@ -7,14 +7,14 @@ data {
 }
 
 transformed data {
-  // average of log-transformed x (for centering beta0)
+  // mean of log(x_obs) for centering the predictor
   real log_x_bar = mean(log(x_obs));
 }
 
 parameters {
   real<lower=0> shape;  // shape for the y|x gamma
-  real beta0c;          // log(E[y]) = beta0c + beta1*log(x)
-  real<lower=0> beta1;  // log(E[y]) = beta0c + beta1*log(x)
+  real beta0c;          // log(E[y]) at x_true = exp(log_x_bar)
+  real<lower=0> beta1;  // slope of log(E[y])
   // latent variables
   real<lower=0> mu_x;
   real<lower=0> cv_x;
@@ -24,24 +24,24 @@ parameters {
 }
 
 transformed parameters {
-  // regression on x_true: conditional mean on log-scale
-  // center the predictor for more stable sampling
-  vector[N] mu = exp(beta0c + beta1 * (log(x_true) - log_x_bar));
-  // original-scale intercept 
-  real beta0 = beta0c - beta1 * log_x_bar;
   // latent variable: shape/rate of the gamma
   real<lower=0> shape_x = inv_square(cv_x);
   real<lower=0> rate_x  = shape_x / mu_x;
+  // regression on x_true: conditional mean on log-scale
+  // center the predictor for more stable sampling
+  vector[N] mu = exp(beta0c + beta1 * (log(x_true) - log_x_bar));
+  // back-transform beta0
+  real beta0 = beta0c - beta1 * log_x_bar;
 }
 
 model {
   // priors
   beta0c ~ normal(log_x_bar, 1);
-  beta1 ~ normal(1, .5);
+  beta1 ~ normal(1, 1);
   shape ~ lognormal(0, 1);
-  // latent: informed prior based on Austrian data
-  mu_x   ~ normal(181, 10);
-  cv_x   ~ lognormal(0, 1);
+  // latent
+  mu_x ~ normal(200, 20);
+  cv_x ~ normal(0.6, 0.2);
   x_true ~ gamma(shape_x, rate_x);
   // measurement error
   shape_mex ~ lognormal(0, 1);
