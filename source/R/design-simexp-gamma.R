@@ -31,7 +31,8 @@ scenario_labeller_gamma <- function(df) {
       cv_y_label            = paste0("CVy", cv_y),
       ratio_cvmex_cvx_label = paste0("Taux", ratio_cvmex_cvx),
       ratio_mey_mex_label   = paste0("Tauxy", ratio_mey_mex),
-      corr_error_label      = paste0("Rho", corr_error)
+      corr_error_label      = paste0("Rho", corr_error),
+      ratio_cvme_label      = paste0("RatioCVme", ratio_cvme_val_train)
     )
 }
 
@@ -45,7 +46,8 @@ simexp_design5 <- expand_grid(
   cv_y            = c(0.01, 0.05, 0.10, 0.20),
   ratio_cvmex_cvx = 0.05,
   ratio_mey_mex   = 1,
-  corr_error      = 0
+  corr_error      = 0,
+  ratio_cvme_val_train = 1
 ) %>% scenario_labeller_gamma()
 
 
@@ -59,11 +61,12 @@ simexp_design6 <- expand_grid(
   cv_y            = 0.05,
   ratio_cvmex_cvx = c(0.01, 0.05, 0.10, 0.20),
   ratio_mey_mex   = c(0.9, 1, 1.1),
-  corr_error      = c(0, 0.5, 0.9)
+  corr_error      = c(0, 0.5, 0.9),
+  ratio_cvme_val_train = 1
 ) %>% scenario_labeller_gamma()
 
 
-# experimental parameters for simexp7: ratio_cvme_train_test
+# experimental parameters for simexp7: ratio_cvme_val_train
 simexp_design7 <- expand_grid(
   sample_size     = 200,
   mu_x            = 1,
@@ -74,7 +77,7 @@ simexp_design7 <- expand_grid(
   ratio_cvmex_cvx = 0.05,
   ratio_mey_mex   = 1,
   corr_error      = 0,
-  ratio_cvme_train_test = c(0.8, 1, 1.2, 1.5)
+  ratio_cvme_val_train = c(0.8, 1, 1.2, 1.5)
 ) %>% scenario_labeller_gamma()
 
 

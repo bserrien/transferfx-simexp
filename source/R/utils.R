@@ -82,11 +82,11 @@ tidy_scenario_gamma <- function(df) {
     separate_wider_delim(
       scenario, "_", 
       names = c("x","sample_size","mux","cvx","alpha","beta",
-                "cvy","taux","tauxy","corr_mexy")
+                "cvy","taux","tauxy","corr_mexy","ratio_cvme")
     ) %>%
     mutate(
       across(c(sample_size, mux, cvx, alpha, beta, 
-               cvy, taux, tauxy, corr_mexy), 
+               cvy, taux, tauxy, corr_mexy, ratio_cvme), 
              ~ as.numeric(gsub("[^0-9.-]", "", .x)))
     ) %>%
     select(-x)

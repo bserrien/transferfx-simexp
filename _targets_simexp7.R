@@ -41,9 +41,10 @@ list(
                      here("source/stan/gamma_linreglogtrafo.stan"),
                      here("source/stan/gammareg.stan"),
                      here("source/stan/gammareg_eiv_knowncvmex.stan"),
+                     here("source/stan/gammareg_eiv_knowncvmex_val.stan"),
                      here("source/stan/gammareg_eiv_unknowncvmex.stan")),
       data = sim_data_gamma(
-        ratio_cvme_train_test = ratio_cvme_train_test
+        ratio_cvme_val_train = ratio_cvme_val_train
       ),
       seed          = 123,
       chains        = 4, parallel_chains = 4,
@@ -69,15 +70,19 @@ list(
     tar_target(preds_gammaregeivknowncvmex,
                summarise_predictions(mcmc_gammareg_eiv_knowncvmex, mcmc_data),
                pattern = map(mcmc_gammareg_eiv_knowncvmex, mcmc_data)),
+    tar_target(preds_gammaregeivknowncvmexval,
+               summarise_predictions(mcmc_gammareg_eiv_knowncvmex_val, mcmc_data),
+               pattern = map(mcmc_gammareg_eiv_knowncvmex_val, mcmc_data)),
     tar_target(preds_gammaregeivunknowncvmex,
                summarise_predictions(mcmc_gammareg_eiv_unknowncvmex, mcmc_data),
                pattern = map(mcmc_gammareg_eiv_unknowncvmex, mcmc_data)),
     
-    #evaluate predictions
+    # evaluate predictions
     tar_target(
       predeval,
       eval_preds_gamma(preds_linreg, preds_linreglogtrafo,
                        preds_gammareg, preds_gammaregeivknowncvmex,
+                       preds_gammaregeivknowncvmexval,
                        preds_gammaregeivunknowncvmex)
     ),
     
@@ -94,6 +99,9 @@ list(
     tar_target(mcmcdx_gammaregeivknowncvmex,
                mcmc_dx(mcmc_gammareg_eiv_knowncvmex),
                pattern = map(mcmc_gammareg_eiv_knowncvmex)),
+    tar_target(mcmcdx_gammaregeivknowncvmexval,
+               mcmc_dx(mcmc_gammareg_eiv_knowncvmex_val),
+               pattern = map(mcmc_gammareg_eiv_knowncvmex_val)),
     tar_target(mcmcdx_gammaregeivunknowncvmex,
                mcmc_dx(mcmc_gammareg_eiv_unknowncvmex),
                pattern = map(mcmc_gammareg_eiv_unknowncvmex)),
@@ -101,6 +109,7 @@ list(
       mcmcdx,
       combine_mcmcdx(mcmcdx_linreg, mcmcdx_linreglogtrafo, mcmcdx_gammareg,
                      mcmcdx_gammaregeivknowncvmex, 
+                     mcmcdx_gammaregeivknowncvmexval,
                      mcmcdx_gammaregeivunknowncvmex)
     )
   ),
@@ -115,12 +124,12 @@ list(
     mcmcdx_summary,
     mapped[["mcmcdx"]],
     command = bind_rows(!!!.x, .id = "scenario") %>% tidy_scenario_gamma()
-  ),
+  )#,
   
-  # render a quarto report of the experiment
-  tar_quarto(
-    report_simexp7,
-    path = here("source/quarto/analysis-simexp7.qmd")
-  )
+  # # render a quarto report of the experiment
+  # tar_quarto(
+  #   report_simexp7,
+  #   path = here("source/quarto/analysis-simexp7.qmd")
+  # )
 )
 
