@@ -73,7 +73,7 @@ We make the following modifications to the model because the values of ECEC are 
 ```{r}
 library(cmdstanr) |> suppressPackageStartupMessages()
 
-mod <- cmdstan_model(here::here("source/stan/gammareg_eiv_realECEC.stan"),
+mod <- cmdstan_model(here::here("source/stan-ECEC/gammareg_eiv_realECEC.stan"),
                      compile = TRUE)
 
 stan_list <- list(
