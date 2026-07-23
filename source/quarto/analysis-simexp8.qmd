@@ -1,0 +1,131 @@
+---
+title: "Simulation experiment (8)"
+format: 
+  html:
+    embed-resources: true
+toc: true
+---
+
+# Design of the experiment
+
+This experiment is designed based on actual soil data from EJP Soil. Below we show ECEC (mmol/kg) as measured by the central Eurofins laboratory (using ISO-23470) vs. the measurements from national labs (where available). Belgium-Wallonia and France used the same method as Eurofins, while other countries used different methods and require a transfer function.
+
+```{r, echo = F, message=F, warning=F}
+library(tidyverse) |> suppressPackageStartupMessages()
+
+load(paste0("C:/Users/ben_serrien/Documents/SoilHarmony/",
+            "soildata-Eurofins-FlandersDS/data/data_ecec.rda"))
+
+ggplot(data_ecec, aes(ecec_nsims, ecec_eurofins)) +
+  facet_wrap(~ country + method_nsims) +
+  geom_point() +
+  geom_smooth(se = F) +
+  geom_smooth(se = F, method = "lm", color = "red") +
+  geom_abline(intercept = 0, slope = 1, lty = 2) +
+  labs(y = "ECEC (Eurofins: ISO-23470)",
+       x = "ECEC (NSIMS: non-reference method)")
+```
+
+
+## Austria
+
+Let's take Austria as an example. Below we show the data and some summary statistics of the ECEC with the NSIMS method.
+
+```{r, echo = F, message=F, warning=F}
+ecec_austria <- data_ecec %>%
+  filter(country == "Austria")
+
+ggplot(ecec_austria, aes(ecec_nsims, ecec_eurofins)) +
+  geom_point() +
+  geom_smooth(se = F) +
+  geom_smooth(se = F, method = "lm", color = "red") +
+  geom_abline(intercept = 0, slope = 1, lty = 2) +
+  xlim(c(0,NA)) + ylim(c(0,NA)) +
+  labs(y = "ECEC (Eurofins: ISO-23470)",
+       x = "ECEC (NSIMS: ONORM L 1086-1)")
+
+ecec_austria %>%
+  summarise(
+    mean_ecec_nsims = mean(ecec_nsims),
+    sd_ecec_nsims = sd(ecec_nsims),
+    cv_ecec_nsims = sd_ecec_nsims/mean_ecec_nsims
+  )
+```
+
+The idea is to design a simulation experiment as follows. We fit the Gamma EIV-model to these data. The purpose of this model is to use it to simulate new data-sets that are similar to the Austrian ECEC data but whose properties we know exactly so we can calculate bias and coverage metrics.
+
+```{r}
+library(cmdstanr) |> suppressPackageStartupMessages()
+
+mod <- cmdstan_model(here::here("source/stan/gammareg_eiv_AustriaECEC.stan"),
+                     compile = TRUE)
+
+stan_list <- list(
+  N     = nrow(ecec_austria),
+  x_obs = as.numeric(ecec_austria$ecec_nsims),
+  y_obs = as.numeric(ecec_austria$ecec_eurofins)
+)
+
+fit <- mod$sample(data = stan_list, adapt_delta = 0.80,
+                  show_messages = T, show_exceptions = T)
+
+# summary statistics
+fit$summary(
+  variables = c("mu_x","cv_x","shape_mex","beta0","beta0c","beta1","shape")
+)
+
+draws_params <- fit$draws(
+  variables = c("mu_x","cv_x","shape_mex","beta0","beta0c","beta1","shape"),
+  format = "draws_df"
+)
+draws_params %>%
+  select(-c(.draw, .iteration)) %>%
+  GGally::ggscatmat(color = ".chain")
+
+# goodness-of-fit
+y_rep <- fit$draws("y_rep", format = "matrix")
+bayesplot::ppc_dens_overlay(y = stan_list$y_obs, yrep = y_rep[1:100, ])
+```
+
+We now have 
+
+
+
+```{r}
+
+draws_params <- fit$draws(
+  variables = c("mu_x","cv_x","shape_x","shape_mex",
+                "beta0","beta0c","beta1","shape"),
+  format = "draws_df"
+)
+
+source(here::here("source/R/simulate-data-gamma.R"))
+
+data_ecec_sim <- sim_data_gamma(
+  N    = 200, 
+  mu_x = draws_params$mu_x[1], 
+  cv_x = draws_params$cv_x[1],
+  cv_y = 1/sqrt(draws_params$shape[1]),
+  alpha = draws_params$beta0[1],
+  beta  = draws_params$beta1[1],
+  ratio_cvmex_cvx = .05,
+  #ratio_cvmex_cvx = (1/sqrt(draws_params$shape_mex[1])) / draws_params$cv_x[1],
+  ratio_mey_mex = 1,
+  corr_error    = 0
+)
+
+data_ecec_sim_cal <- data.frame(
+  x_obs = data_ecec_sim$x_obs,
+  y_obs = data_ecec_sim$y_obs,
+  x_true = data_ecec_sim$x_true,
+  y_true = data_ecec_sim$y_true
+)
+
+ggplot(data_ecec_sim_cal) +
+  geom_point(aes(x_obs, y_obs)) +
+  geom_point(aes(x_true, y_true), color = "red") +
+  geom_abline(slope = 1, intercept = 0, lty = 2)
+```
+
+
+
