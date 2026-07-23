@@ -57,7 +57,7 @@ simexp_design6 <- expand_grid(
   alpha           = 0,
   beta            = 1,
   cv_y            = 0.05,
-  ratio_cvmex_cvx = c(0, 0.01, 0.05, 0.10, 0.20),
+  ratio_cvmex_cvx = c(0.01, 0.05, 0.10, 0.20),
   ratio_mey_mex   = c(0.9, 1, 1.1),
   corr_error      = c(0, 0.5, 0.9)
 ) %>% scenario_labeller_gamma()
