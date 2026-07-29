@@ -18,9 +18,9 @@ parameters {
 
 model {
   // prior
-  beta0 ~ normal(0, 1);
-  beta1 ~ normal(1, .5);
-  sigma ~ lognormal(0, 0.5);
+  beta0 ~ normal(0, 5);
+  beta1 ~ normal(1, 1);
+  sigma ~ lognormal(0, 1);
   // likelihood
   y_obs ~ normal(beta0 + beta1 * x_obs, sigma);
 }

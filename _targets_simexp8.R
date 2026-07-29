@@ -44,7 +44,7 @@ list(
     iter_sampling = 1000,
     refresh       = 0,
     batches       = 5,
-    reps          = 1,
+    reps          = 5,
     stdout = R.utils::nullfile(),
     stderr = R.utils::nullfile()
   ),
@@ -82,28 +82,28 @@ list(
     eval_preds_gamma(preds_linreg, preds_linreglogtrafo,
                      preds_gammareg, preds_gammaregeivknowncvmex,
                      preds_gammaregeivunknowncvmex)
+  ),
+
+  # MCMC-diagnostics
+  tar_target(mcmcdx_linreg,
+             mcmc_dx(mcmc_ECEC_linreg),
+             pattern = map(mcmc_ECEC_linreg)),
+  tar_target(mcmcdx_linreglogtrafo,
+             mcmc_dx(mcmc_ECEC_linreglogtrafo),
+             pattern = map(mcmc_ECEC_linreglogtrafo)),
+  tar_target(mcmcdx_gammareg,
+             mcmc_dx(mcmc_ECEC_gammareg),
+             pattern = map(mcmc_ECEC_gammareg)),
+  tar_target(mcmcdx_gammaregeivknowncvmex,
+             mcmc_dx(mcmc_ECEC_gammareg_eiv_knowncvmex),
+             pattern = map(mcmc_ECEC_gammareg_eiv_knowncvmex)),
+  tar_target(mcmcdx_gammaregeivunknowncvmex,
+             mcmc_dx(mcmc_ECEC_gammareg_eiv_unknowncvmex),
+             pattern = map(mcmc_ECEC_gammareg_eiv_unknowncvmex)),
+  tar_target(
+    mcmcdx,
+    combine_mcmcdx(mcmcdx_linreg, mcmcdx_linreglogtrafo, mcmcdx_gammareg,
+                   mcmcdx_gammaregeivknowncvmex, mcmcdx_gammaregeivunknowncvmex)
   )
-  # 
-  # # MCMC-diagnostics
-  # tar_target(mcmcdx_linreg,
-  #            mcmc_dx(mcmc_gamma_linreg),
-  #            pattern = map(mcmc_gamma_linreg)),
-  # tar_target(mcmcdx_linreglogtrafo,
-  #            mcmc_dx(mcmc_gamma_linreglogtrafo),
-  #            pattern = map(mcmc_gamma_linreglogtrafo)),
-  # tar_target(mcmcdx_gammareg,
-  #            mcmc_dx(mcmc_gammareg),
-  #            pattern = map(mcmc_gammareg)),
-  # tar_target(mcmcdx_gammaregeivknowncvmex,
-  #            mcmc_dx(mcmc_gammareg_eiv_knowncvmex),
-  #            pattern = map(mcmc_gammareg_eiv_knowncvmex)),
-  # tar_target(mcmcdx_gammaregeivunknowncvmex,
-  #            mcmc_dx(mcmc_gammareg_eiv_unknowncvmex),
-  #            pattern = map(mcmc_gammareg_eiv_unknowncvmex)),
-  # tar_target(
-  #   mcmcdx,
-  #   combine_mcmcdx(mcmcdx_linreg, mcmcdx_linreglogtrafo, mcmcdx_gammareg,
-  #                  mcmcdx_gammaregeivknowncvmex, mcmcdx_gammaregeivunknowncvmex)
-  # )
 )
 

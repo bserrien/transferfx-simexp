@@ -32,7 +32,7 @@ Is the small range of data in Wallonia and Portugal (compared to other countries
 
 ## Italy & Portugal
 
-Let's take Italy and Portugal as an example (TF from ISO-13536 to ISO-23470). We ignore the variation within ISO-13536 for the moment, just for illustrative purposes. Below we show the data and some summary statistics of the ECEC with the NSIMS method. We combine both countries here for simplicity.
+Let's take Italy and Portugal as an example (TF from ISO-13536 to ISO-23470). We ignore the variation within ISO-13536 for the moment and combine both countries, just for illustrative purposes. Below we show the data and some summary statistics of the ECEC with the NSIMS method. Just from eyeballing we can see that the prediction intervals for the transfer function will be too large for practical use (I think?). Perhaps better with multiple predictors?
 
 ```{r, echo = F, message=F, warning=F}
 ecec_13536 <- data_ecec %>%
@@ -52,6 +52,7 @@ ggplot(ecec_13536, aes(log(ecec_nsims), log(ecec_eurofins))) +
   geom_smooth(se = F) +
   geom_smooth(se = F, method = "lm", color = "red") +
   geom_abline(intercept = 0, slope = 1, lty = 2) +
+  xlim(c(0,NA)) + ylim(c(0,NA)) +
   labs(y = "log ECEC (Eurofins: ISO-23470)",
        x = "log ECEC (NSIMS: ISO-13536)")
 
@@ -67,8 +68,7 @@ The idea is to design a simulation experiment as follows. We fit the Gamma EIV-m
 
 We make the following modifications to the model because the values of ECEC are different than those in the simulations before.
 
-- we use flat priors for $\mu_X$ and $\beta_0$
-- we use a non-centered prior on $X_{true}$ with rate 1 ($x_{true,i}^* \sim \mathcal{G}(CV_X^{-2}, 1)$) and then later transform these to $x_{true,i} = \frac{x_{true,i}^*\cdot \mu_X}{CV_X^{-2}}$.
+- we use a non-centered prior on $\beta_0$
 
 ```{r}
 library(cmdstanr) |> suppressPackageStartupMessages()
@@ -82,7 +82,7 @@ stan_list <- list(
   y_obs = as.numeric(ecec_13536$ecec_eurofins)
 )
 
-fit <- mod$sample(data = stan_list, show_messages = F, show_exceptions = T,
+fit <- mod$sample(data = stan_list, show_messages = F, show_exceptions = F,
                   adapt_delta = 0.99, max_treedepth = 12)
 
 # summary statistics
@@ -151,10 +151,38 @@ ggplot(data_ecec_sim_cal) +
 save(draws_params_hdi, file = here::here("data/draws_params_hdi_ECEC.rda"))
 ```
 
-The simulation experiment can then proceed as follows: for each replicate, we take a draw from the posterior, plug the values in `sim_data_gamma()`, use the same models as before to fit a TF, predict the values in the training data and evaluate the predictions. 
+The simulation experiment can then proceed as follows: for each replicate, we take a draw from the posterior, plug the values in `sim_data_gamma()`, use the same models as before to fit a TF, predict the values in the training data and evaluate the predictions. The results are summarized below:
 
-```{r}
+```{r, echo = F}
+prj_store <- here::here("store_simexp8")
+targets::tar_load(predeval, store = prj_store)
 
+predeval %>%
+  pivot_longer(
+    c(PICP, MAE, MPE, RMSE, R2, SDPE, PNEG, PNEGll), 
+    names_to = "metric", values_to = "value"
+  ) %>% 
+  mutate(
+    metric = factor(metric, c("MPE","MAE","RMSE","R2","SDPE","PICP","PNEG","PNEGll")),
+    model = factor(
+      model, c("linreg","linreglogtrafo","gammareg",
+               "gammaregeivknowncvmex","gammaregeivunknowncvmex"),
+      c("Linear regression","Linear regression\n(logtransformed data)",
+        "Gamma GLM","Gamma EIV\n(known CV mex)","Gamma EIV\n(prior on CV mex)")
+    )
+  ) %>%
+  ggplot(aes(model, value, colour = model)) +
+  facet_wrap(~ metric, scales = "free_y") +
+  geom_boxplot() +
+  geom_point(position = position_jitterdodge(.1, 0)) +
+  labs(
+    title = "calibration metrics", y = "",
+    x = "", color = ""
+  ) +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"),
+        axis.text.x = element_blank(),
+        legend.position = "bottom")
 ```
 
 

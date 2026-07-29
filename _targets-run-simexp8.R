@@ -18,3 +18,27 @@ tar_make()
 tar_objects()
 
 tar_load(predeval)
+
+tar_load(preds_gammareg_2a2667326b8f11ef)
+preds_gammareg_2a2667326b8f11ef %>%
+  slice_sample(n = 10) %>%
+  ggplot() +
+  geom_point(aes(y_true_new, y_obs_new), color = "red") +
+  geom_point(aes(y_true_new, yhat)) +
+  geom_errorbar(aes(y_true_new, yhat, ymin = yhat_ll, ymax = yhat_ul))
+
+tar_load(preds_linreg_b508c06357f4510d)
+preds_linreg_b508c06357f4510d %>%
+  slice_sample(n = 10) %>%
+  ggplot() +
+  geom_point(aes(y_true_new, y_obs_new), color = "red") +
+  geom_point(aes(y_true_new, yhat)) +
+  geom_errorbar(aes(y_true_new, yhat, ymin = yhat_ll, ymax = yhat_ul))
+
+tar_load(preds_gammaregeivunknowncvmex_72990a71c60457b7)
+preds_gammaregeivunknowncvmex_72990a71c60457b7 %>%
+  slice_sample(n = 10) %>%
+  ggplot() +
+  geom_point(aes(y_true_new, y_obs_new), color = "red") +
+  geom_point(aes(y_true_new, yhat)) +
+  geom_errorbar(aes(y_true_new, yhat, ymin = yhat_ll, ymax = yhat_ul))

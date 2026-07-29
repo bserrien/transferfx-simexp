@@ -39,9 +39,9 @@ transformed parameters {
 
 model {
   // priors
-  beta0 ~ normal(0, 1);
-  beta1 ~ normal(1, .5);
-  shape ~ lognormal(0, 1); // ~ exponential(.002);
+  beta0 ~ normal(0, 5);
+  beta1 ~ normal(1, 1);
+  shape ~ lognormal(0, 1); 
   // latent
   mu_x   ~ lognormal(0, 1);
   cv_x   ~ lognormal(0, 1);
