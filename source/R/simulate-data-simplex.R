@@ -46,16 +46,27 @@ sim_data_simplex <- function(
     )
   )
   ilr_x_obs <- ilr_x + eps_xy[, 1:2]
+  ilr_x_obs <- mutate(ilr_x_obs, X0 = 1, .before = X1) # intercept
   ilr_y_obs <- ilr_y + eps_xy[, 3:4]
   
   # transform observed to PSD (%)
-  psd_x_obs <- data.frame(compositions::ilrInv(ilr_x_obs))
+  psd_x_obs <- data.frame(compositions::ilrInv(ilr_x_obs[, 2:3]))
   colnames(psd_x_obs) <- c("x_obs_clay","x_obs_silt","x_obs_sand")
   psd_y_obs <- data.frame(compositions::ilrInv(ilr_y_obs))
   colnames(psd_y_obs) <- c("y_obs_clay","y_obs_silt","y_obs_sand")
   psd_obs <- cbind(psd_x_obs, psd_y_obs)
   
-  return(cbind(id = 1:N, psd, psd_obs))
+  # output for use in STAN model
+  df_stan <- list(
+    N = N,
+    K = 2, # ILR(3-dimensional simplex) = 2-dimensional
+    J = 3, # predictors: intercept + 2-dimensional ILR
+    ilr_x_obs = ilr_x_obs, # predictor variables
+    ilr_y_obs = ilr_y_obs, # outcome variables
+    # data.frame with latent and observed values of both methods in % (inv-ILR)
+    psd = cbind(id = 1:N, psd, psd_obs)
+  )
+  return(df_stan)
 }
 
 
@@ -72,19 +83,13 @@ sim_data_simplex <- function(
 #   mutate(method = substr(.name, 1, 1),
 #          obs = stringr::str_split_i(.name, "_", 2))
 # 
-# b <- psd %>%
+# b <- psd$psd %>%
 #   pivot_longer_spec(spc) %>%
 #   ggtern(aes(silt, clay, sand, group = id)) +
 #   facet_wrap(~ obs) +
 #   geom_point(aes(color = method)) + geom_line(alpha = .2) 
 # 
-# psd %>%
-#   pivot_longer_spec(spc) %>%
-#   ggtern(aes(silt, clay, sand, group = id)) +
-#   facet_wrap(~ method) +
-#   geom_point(aes(color = obs)) + geom_line(alpha = .2) 
-# 
-# a <- psd %>%
+# a <- psd$psd %>%
 #   pivot_longer_spec(spc) %>%
 #   pivot_longer(c("clay","silt","sand"), 
 #                names_to = "ps", values_to = "pct") %>%
@@ -96,5 +101,36 @@ sim_data_simplex <- function(
 #   geom_abline(intercept = 0, slope = 1, lty = 2)
 # 
 # ggpubr::ggarrange(a, b, nrow = 2)
+
+
+library(cmdstanr)
+
+mod <- cmdstan_model(here::here("source/stan-PSD/mvlinreg.stan"))
+
+fit <- mod$sample(data = psd)
+
+fit$summary()
+fitsum <- fit$summary()
+
+preds <- cbind(
+  fitsum %>%
+    filter(grepl("ilr_y_obs_rep", variable)) %>%
+    filter(grepl("\\,1]", variable)) %>%
+    select(mean),
+  fitsum %>%
+    filter(grepl("ilr_y_obs_rep", variable)) %>%
+    filter(grepl("\\,2]", variable)) %>%
+    select(mean)
+) %>% 
+  compositions::ilrInv() %>%
+  data.frame()
+
+ggtern(preds, aes(X1, X2, X3)) +
+  geom_point()
+
+
+
+
+
 
 
