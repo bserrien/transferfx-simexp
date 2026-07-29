@@ -55,13 +55,46 @@ sim_data_simplex <- function(
   colnames(psd_y_obs) <- c("y_obs_clay","y_obs_silt","y_obs_sand")
   psd_obs <- cbind(psd_x_obs, psd_y_obs)
   
-  return(cbind(psd, psd_obs))
+  return(cbind(id = 1:N, psd, psd_obs))
 }
 
 
-ggtern(psd) +
-  geom_point(aes(y_silt, y_clay, y_sand), color = "red") +
-  geom_point(aes(x_silt, x_clay, x_sand), color = "blue") 
+# testing 
+# psd <- sim_data_simplex()
+# 
+# spc <- data.frame(
+#   .name = c("x_obs_clay","x_obs_silt","x_obs_sand",
+#             "y_obs_clay","y_obs_silt","y_obs_sand",
+#             "x_true_clay","x_true_silt","x_true_sand",
+#             "y_true_clay","y_true_silt","y_true_sand"),
+#   .value = rep(c("clay","silt","sand"), 4)
+# ) %>%
+#   mutate(method = substr(.name, 1, 1),
+#          obs = stringr::str_split_i(.name, "_", 2))
+# 
+# b <- psd %>%
+#   pivot_longer_spec(spc) %>%
+#   ggtern(aes(silt, clay, sand, group = id)) +
+#   facet_wrap(~ obs) +
+#   geom_point(aes(color = method)) + geom_line(alpha = .2) 
+# 
+# psd %>%
+#   pivot_longer_spec(spc) %>%
+#   ggtern(aes(silt, clay, sand, group = id)) +
+#   facet_wrap(~ method) +
+#   geom_point(aes(color = obs)) + geom_line(alpha = .2) 
+# 
+# a <- psd %>%
+#   pivot_longer_spec(spc) %>%
+#   pivot_longer(c("clay","silt","sand"), 
+#                names_to = "ps", values_to = "pct") %>%
+#   pivot_wider(values_from = pct, 
+#               names_from = method, names_prefix = "pct_") %>%
+#   ggplot(aes(pct_x, pct_y, color = obs)) +
+#   facet_wrap(~ ps) +
+#   geom_point() +
+#   geom_abline(intercept = 0, slope = 1, lty = 2)
+# 
+# ggpubr::ggarrange(a, b, nrow = 2)
 
-ggplot(psd, aes(x_sand, y_sand)) +
-  geom_point()
+
