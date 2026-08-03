@@ -2,7 +2,7 @@
 
 #' @title eval_preds
 #' @param ... set of models to evaluate, passed as different arguments
-eval_preds <- function(...) {
+eval_preds <- function(..., fx_valmetrics) {
   preds        <- list(...)
   names(preds) <- stringr::str_split_i(
     as.character(as.list(substitute(list(...)))[-1]),
@@ -13,7 +13,7 @@ eval_preds <- function(...) {
       mutate(model = names(preds)[i])
   }
   data.table::rbindlist(
-    lapply(preds, val_metrics)
+    lapply(preds, fx_valmetrics)
   )
 }
 
@@ -34,3 +34,5 @@ val_metrics <- function(df) {
       PICP = mean(between(y_obs, yhat_ll, yhat_ul))
     ) 
 }
+
+

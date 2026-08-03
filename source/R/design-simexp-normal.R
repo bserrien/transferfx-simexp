@@ -1,5 +1,12 @@
-# design of the simulation experiment
+# design-simexp-normal.R
+#
+# design simulation experiments with normal distributed variables
 
+
+
+
+# -------------------------------------------------------------------------
+# gaussian data, gaussian noise -------------------------------------------
 
 # parameters of the scenario's:
 # should match the arguments of the function sim_data()
@@ -119,3 +126,8 @@ simexp_design4 <- expand_grid(
   ratio_sdmeval_sdmetrain = c(0.8, 1, 1.2, 1.5)
 ) %>% scenario_labeller()
 
+
+
+
+
+ 

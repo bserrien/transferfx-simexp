@@ -48,11 +48,19 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-# folder to save simulated data and results (don't track with git)
-simulation-data/*
+# folder to save data and results (don't track with git)
+data/*
 
 # personal folders not for github
+source/archive/*
 archive/*
 
 # targets package: don' track the _targets/ folder
 # separate .gitignore file
+
+# cmdstanr: don't track the executables
+source/stan/*.exe
+source/stan-ECEC/*.exe
+
+
+

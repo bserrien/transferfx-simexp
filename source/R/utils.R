@@ -22,18 +22,18 @@ mcmc_dx <- function(df) {
 
 
 #' @title combine_mcmcdx
-#' @param linreg ....
-#' @param eivreg1 ....
-#' @param eivreg2 ....
-combine_mcmcdx <- function(linreg, eivreg1, eivreg2) {
-  data.table::rbindlist(
-    list(
-      linreg %>% mutate(model = "linreg"),
-      eivreg1 %>% mutate(model = "eivreg1"),
-      eivreg2 %>% mutate(model = "eivreg2")
-    ),
-    use.names = TRUE, fill = TRUE
+#' @param ... list of models with MCMC samples
+combine_mcmcdx <- function(...) {
+  models <- list(...)
+  names(models) <- stringr::str_split_i(
+    as.character(as.list(substitute(list(...)))[-1]),
+    "_", 2
   )
+  for (i in 1:length(models)) {
+    models[[i]] <- models[[i]] %>%
+      mutate(model = names(models)[i])
+  }
+  data.table::rbindlist(models, use.names = TRUE, fill = TRUE)
 }
 
 
@@ -71,4 +71,25 @@ tidy_scenario <- function(df) {
     ) %>%
     select(-x)
 }
+
+
+#' @title tidy_scenario_gamma
+#' @description
+#' Extract scenario parameters from the scenario column
+#' @param df ....
+tidy_scenario_gamma <- function(df) {
+  df %>%
+    separate_wider_delim(
+      scenario, "_", 
+      names = c("x","sample_size","mux","cvx","alpha","beta",
+                "cvy","taux","tauxy","corr_mexy","ratio_cvme")
+    ) %>%
+    mutate(
+      across(c(sample_size, mux, cvx, alpha, beta, 
+               cvy, taux, tauxy, corr_mexy, ratio_cvme), 
+             ~ as.numeric(gsub("[^0-9.-]", "", .x)))
+    ) %>%
+    select(-x)
+}
+
 

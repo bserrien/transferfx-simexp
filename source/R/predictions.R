@@ -187,3 +187,7 @@ predx_eivreg_knownsd <- function(draws, newdata, newdatasd, level = .95) {
     select(uniqueid, y_true, y_obs) %>%
     left_join(yhat, by = "uniqueid")
 }
+
+
+
+
