@@ -151,7 +151,7 @@ ggplot(data_ecec_sim_cal) +
 save(draws_params_hdi, file = here::here("data/draws_params_hdi_ECEC.rda"))
 ```
 
-The simulation experiment can then proceed as follows: for each replicate, we take a draw from the posterior, plug the values in `sim_data_gamma()`, use the same models as before to fit a TF, predict the values in the training data and evaluate the predictions. The results are summarized below:
+The simulation experiment can then proceed as follows: for each replicate, we take a draw from the posterior, plug the values in `sim_data_gamma()` to simulate training and calibration data, use the same models as before to fit a TF in the training data, predict the values in the calibration data and evaluate the predictions. The results are summarized below:
 
 ```{r, echo = F}
 prj_store <- here::here("store_simexp8")
