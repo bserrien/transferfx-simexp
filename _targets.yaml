@@ -22,3 +22,6 @@ project_simexp7:
 project_simexp8:
   script: _targets_simexp8.R
   store: store_simexp8
+project_simexp9:
+  script: _targets_simexp9.R
+  store: store_simexp9
