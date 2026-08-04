@@ -61,6 +61,7 @@ archive/*
 # cmdstanr: don't track the executables
 source/stan/*.exe
 source/stan-ECEC/*.exe
+source/stan-PSD/*.exe
 
 
 
