@@ -30,61 +30,14 @@ tar_load(mcmcdx_summary)
 
 tar_load(predeval_summary)
 
-tar_load(mcmc_data_Nsample100_Mux5_CVx0.696733_Alpha0_Beta1_CVy0.05_Taux0.05_Tauxy1_Rho0_607315fe597c4c84)
 
+# file management: move intermediate targets to Google Drive
+source(here::here("source/R/file-management.R"))
+obj2keep <- c("predeval_summary","mcmcdx_summary")
 
-tar_load(mcmc_data_Nsample100_Mux158.4615_CVx0.696733_Alpha0_Beta1_CVy0.05_Taux0.05_Tauxy1_Rho0_83da79d6e79412d9)
-hist(mcmc_data_Nsample100_Mux158.4615_CVx0.696733_Alpha0_Beta1_CVy0.05_Taux0.05_Tauxy1_Rho0_83da79d6e79412d9[[1]]$x_true)
-
-curve(dgamma(x, shape = 0.696733^(-2), rate = 0.696733^(-2)/158.4615), from = 0, to = 600)
-
-tar_load(mcmc_data_Nsample100_Mux5_CVx0.696733_Alpha0_Beta1_CVy0.05_Taux0.05_Tauxy1_Rho0_607315fe597c4c84)
-hist(mcmc_data_Nsample100_Mux5_CVx0.696733_Alpha0_Beta1_CVy0.05_Taux0.05_Tauxy1_Rho0_607315fe597c4c84[[1]]$x_true)
-summary(mcmc_data_Nsample100_Mux5_CVx0.696733_Alpha0_Beta1_CVy0.05_Taux0.05_Tauxy1_Rho0_607315fe597c4c84[[1]]$x_true)
-
-curve(dgamma(x, shape = 0.696733^(-2), rate = 0.696733^(-2)/5), from = 0, to = 30)
-
-with(
-  mcmc_data_Nsample100_Mux158.4615_CVx0.696733_Alpha0_Beta1_CVy0.05_Taux0.05_Tauxy1_Rho0_83da79d6e79412d9[[1]],
-  plot(x_true, y_true)
+move_targets_to_gdrive(
+  tar_path_store(),
+  obj2keep,
+  "G:/Mijn Drive/data/SoilHarmony/simexp_tf"
 )
-with(
-  mcmc_data_Nsample100_Mux158.4615_CVx0.696733_Alpha0_Beta1_CVy0.05_Taux0.05_Tauxy1_Rho0_83da79d6e79412d9[[1]],
-  plot(x_obs, y_obs)
-)
-
-
-tar_load(mcmcdx_summary)
-
-
-
-tar_load(preds_gammareg_Nsample100_Mux5_CVx0.696733_Alpha0_Beta1_CVy0.05_Taux0.05_Tauxy1_Rho0_cfe83edd0d1f157c)
-
-
-tar_load(mcmc_gammareg_Nsample100_Mux158.4615_CVx0.696733_Alpha0_Beta1_CVy0.05_Taux0.05_Tauxy1_Rho0_84464aa5df84060c)
-
-mcmc_gammareg_Nsample100_Mux158.4615_CVx0.696733_Alpha0_Beta1_CVy0.05_Taux0.05_Tauxy1_Rho0_84464aa5df84060c %>%
-  filter(.rep == "3dd8f772c42420b2") %>%
-  ggplot(aes(shape)) + 
-  geom_histogram()
-
-
-tar_load(mcmc_gammareg_eiv_knowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0_162fe9cbcc197974)
-
-
-tar_load(mcmc_data_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0_dc6841fd92d1177a)
-
-tar_load(predeval_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0)
-
-
-
-tar_load(mcmc_gammareg_eiv_unknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0_162fe9cbcc197974)
-unique(mcmc_gammareg_eiv_unknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0_162fe9cbcc197974$.rep)
-mcmc_gammareg_eiv_unknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.01_Taux0.05_Tauxy1_Rho0_162fe9cbcc197974 %>%
-  filter(.rep == "e99fbf80fca2d92e") %>%
-  rename(chain = .chain) %>%
-  select(!contains("[")) %>% select(!contains(".")) %>% 
-  select(-c(lp__, shape_x, rate_x)) %>%
-  GGally::ggscatmat(color = "chain")
-
 

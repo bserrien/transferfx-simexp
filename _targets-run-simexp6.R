@@ -17,10 +17,14 @@ tar_make()
 
 tar_objects()
 
-tar_load(mcmc_gammareg_eiv_unknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.05_Taux0.05_Tauxy0.9_Rho0.5_b0babece05890e24)
 
-mcmc_gammareg_eiv_unknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta1_CVy0.05_Taux0.05_Tauxy0.9_Rho0.5_b0babece05890e24 %>%
-  ggplot(aes(beta0, beta1, color = factor(.chain))) +
-  facet_wrap(~ .rep) +
-  geom_point()
+# file management: move intermediate targets to Google Drive
+source(here::here("source/R/file-management.R"))
+obj2keep <- c("predeval_summary","mcmcdx_summary")
+
+move_targets_to_gdrive(
+  tar_path_store(),
+  obj2keep,
+  "G:/Mijn Drive/data/SoilHarmony/simexp_tf"
+)
 
