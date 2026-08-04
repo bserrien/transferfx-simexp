@@ -42,3 +42,14 @@ preds_gammaregeivunknowncvmex_72990a71c60457b7 %>%
   geom_point(aes(y_true_new, y_obs_new), color = "red") +
   geom_point(aes(y_true_new, yhat)) +
   geom_errorbar(aes(y_true_new, yhat, ymin = yhat_ll, ymax = yhat_ul))
+
+
+# file management: move intermediate targets to Google Drive
+source(here::here("source/R/file-management.R"))
+obj2keep <- c("predeval_summary","mcmcdx_summary")
+
+move_targets_to_gdrive(
+  tar_path_store(),
+  obj2keep,
+  "G:/Mijn Drive/data/SoilHarmony/simexp_tf"
+)

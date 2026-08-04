@@ -40,3 +40,13 @@ tar_load(mcmc_data_Nsample100_Tau0.1_Tailtdf3)
 tar_load(mcmcdx_linreg_Nsample100_Tau0.1_Tailnormal_8d7f259f2c1dedb2)
 tar_load(mcmcdx_linreg_all)
 
+
+# file management: move intermediate targets to Google Drive
+source(here::here("source/R/file-management.R"))
+obj2keep <- c("predeval_summary","regdilution_summary","mcmcdx_summary")
+
+move_targets_to_gdrive(
+  tar_path_store(),
+  obj2keep,
+  "G:/Mijn Drive/data/SoilHarmony/simexp_tf"
+)

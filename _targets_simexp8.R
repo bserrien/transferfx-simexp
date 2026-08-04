@@ -104,6 +104,12 @@ list(
     mcmcdx,
     combine_mcmcdx(mcmcdx_linreg, mcmcdx_linreglogtrafo, mcmcdx_gammareg,
                    mcmcdx_gammaregeivknowncvmex, mcmcdx_gammaregeivunknowncvmex)
+  ),
+  
+  # render a quarto report of the experiment
+  tar_quarto(
+    report_simexp8,
+    path = here("source/quarto/analysis-simexp8.qmd")
   )
 )
 

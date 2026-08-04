@@ -153,6 +153,7 @@ draws_df <- fit$draws(format = "data.frame")
 
 
 predict_psd <- function(draws_ilr) {
+  
   draws_new_obs <- draws_ilr %>%
     select(.draw, contains("ilr_y_obs_new_rep"))
   
@@ -167,27 +168,26 @@ predict_psd <- function(draws_ilr) {
   
   draws_new_obs_long <- draws_new_obs %>%
     pivot_longer_spec(spc)
+  draws_new_obs_psd <- compositions::ilrInv(
+    draws_new_obs_long[, c("X1","X2")]
+  )
+  colnames(draws_new_obs_psd) <- c("clay","silt","sand")
   
-  #### deze stappen moeten omgekeerd worden volgens Martínez-Minaya (2025)
-  # pred_summary <- draws_new_obs_long %>%
-  #   summarise(
-  #     .by = obs,
-  #     X1_mean = mean(X1),
-  #     X2_mean = mean(X2),
-  #     X1_ll   = quantile(X1, .025),
-  #     X1_ul   = quantile(X1, .975),
-  #     X2_ll   = quantile(X2, .025),
-  #     X2_ul   = quantile(X2, .975)
-  #   )
-  # 
-  # pred_psd    <- compositions::ilrInv(pred_summary[,c("X1_mean","X2_mean")])
-  # pred_psd_ll <- compositions::ilrInv(pred_summary[,c("X1_ll","X2_ll")])
-  # pred_psd_ul <- compositions::ilrInv(pred_summary[,c("X1_ul","X2_ul")])
-  # colnames(pred_psd)    <- c("clay_hat","silt_hat","sand_hat")
-  # colnames(pred_psd_ll) <- c("clay_ll","silt_ll","sand_ll")
-  # colnames(pred_psd_ul) <- c("clay_ul","silt_ul","sand_ul")
-  
-  return( data.frame(cbind(pred_psd, pred_psd_ll, pred_psd_ul)) )
+  pred_summary <- cbind(draws_new_obs_long, draws_new_obs_psd) %>%
+    summarise(
+      .by = obs,
+      clay_hat = mean(clay),
+      silt_hat = mean(silt),
+      sand_hat = mean(sand),
+      clay_ll  = quantile(clay, .025),
+      clay_ul  = quantile(clay, .975),
+      silt_ll  = quantile(silt, .025),
+      silt_ul  = quantile(silt, .975),
+      sand_ll  = quantile(sand, .025),
+      sand_ul  = quantile(sand, .975)
+    )
+
+  return( pred_summary )
 }
 
 preds_psd <- predict_psd(draws_df)
@@ -214,7 +214,15 @@ preds_psd[idx, ] %>%
 
 
 
-
+cbind(psd$psd_new, preds_psd) %>%
+  summarise(
+    MPE_clay = mean(y_obs_clay - clay_hat),
+    MPE_silt = mean(y_obs_silt - silt_hat),
+    MPE_sand = mean(y_obs_sand - sand_hat),
+    PICP_clay = mean(between(y_obs_clay, clay_ll, clay_ul)),
+    PICP_silt = mean(between(y_obs_silt, silt_ll, silt_ul)),
+    PICP_sand = mean(between(y_obs_sand, sand_ll, sand_ul))
+  )
 
 
 
