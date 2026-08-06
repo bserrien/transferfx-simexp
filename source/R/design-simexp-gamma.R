@@ -51,6 +51,21 @@ simexp_design5 <- expand_grid(
 ) %>% scenario_labeller_gamma()
 
 
+# experimental parameters for simexp5bis: sample_size & cv_(y|x)
+simexp_design5bis <- expand_grid(
+  sample_size     = 200,
+  mu_x            = 1,
+  cv_x            = .5, 
+  alpha           = c(-.5, -.2, 0, .2, .5),
+  beta            = c(0.5, 0.8, 1, 1.2, 1.5),
+  cv_y            = 0.05,
+  ratio_cvmex_cvx = 0.05,
+  ratio_mey_mex   = 1,
+  corr_error      = 0,
+  ratio_cvme_val_train = 1
+) %>% scenario_labeller_gamma()
+
+
 # experimental parameters for simexp6: taux, tauxy, corr_mexy
 simexp_design6 <- expand_grid(
   sample_size     = 200,
