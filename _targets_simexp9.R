@@ -32,12 +32,11 @@ list(
     names  = all_of(labs),
     
     # for each batch/rep: draw simulated data and fit Bayesian models on it
-    # the function sim_data returns both a training and a validation dataset
+    # the function sim_data_simplex returns both a training 
+    # and a validation dataset
     tar_stan_mcmc_rep_draws(
       name       = mcmc,
-      stan_files = c(here("source/stan/linreg.stan"),
-                     here("source/stan/eivreg_known_sdmex.stan"),
-                     here("source/stan/eivreg_unknown_sdmex.stan")),
+      stan_files = c(here("source/stan-PSD/mvlinreg.stan")),
       data = sim_data_simplex(
         
       ),
