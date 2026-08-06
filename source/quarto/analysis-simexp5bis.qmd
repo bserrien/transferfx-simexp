@@ -119,6 +119,60 @@ predeval_summary %>%
         legend.position = "bottom")
 ```
 
+```{r, echo=F}
+#| label: fig-calibration3
+#| fig-cap: "Results of the simulation experiment: effect of the slope and intercept of the XY-relation (log-scale) on PICP. Each facet has a different y-axis because the calibration metrics are on different scales."
+
+predeval_summary %>%
+  mutate(
+    model = factor(
+      model, c("linreg","linreglogtrafo","gammareg",
+               "gammaregeivknowncvmex","gammaregeivunknowncvmex"),
+      c("Linear regression","Linear regression\n(logtransformed data)",
+        "Gamma GLM","Gamma EIV\n(known CV mex)","Gamma EIV\n(prior on CV mex)")
+    )
+  ) %>%
+  ggplot(aes(model, PICP, colour = model)) +
+  facet_grid(alpha ~ beta, labeller = "label_both") +
+  geom_boxplot() +
+  geom_hline(yintercept = .95, lty = 2) +
+  geom_point(position = position_jitterdodge(.1, 0)) +
+  labs(
+    title = "calibration metrics", y = "PICP", x = "",
+    color = "Models"
+  ) +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"),
+        axis.text.x = element_blank(),
+        legend.position = "bottom")
+```
+
+```{r, echo=F}
+#| label: fig-calibration4
+#| fig-cap: "Results of the simulation experiment: effect of the slope and intercept of the XY-relation (log-scale) on R². Each facet has a different y-axis because the calibration metrics are on different scales."
+
+predeval_summary %>%
+  mutate(
+    model = factor(
+      model, c("linreg","linreglogtrafo","gammareg",
+               "gammaregeivknowncvmex","gammaregeivunknowncvmex"),
+      c("Linear regression","Linear regression\n(logtransformed data)",
+        "Gamma GLM","Gamma EIV\n(known CV mex)","Gamma EIV\n(prior on CV mex)")
+    )
+  ) %>%
+  ggplot(aes(model, R2, colour = model)) +
+  facet_grid(alpha ~ beta, labeller = "label_both") +
+  geom_boxplot() +
+  geom_point(position = position_jitterdodge(.1, 0)) +
+  labs(
+    title = "calibration metrics", y = "R²", x = "",
+    color = "Models"
+  ) +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"),
+        axis.text.x = element_blank(),
+        legend.position = "bottom")
+```
 
 The linear regression model suffers from the inability to constrain predictions and prediction intervals to the positive real line. The other models don't have this deficiency.
 
@@ -135,7 +189,7 @@ predeval_summary %>%
 
 
 ```{r, warning=F, echo=F}
-#| label: fig-calibration4
+#| label: fig-calibration5
 #| fig-cap: "Linear regression: proportion of data points with negative predictions or negative prediction intervals"
 
 predeval_summary %>%

@@ -2599,6 +2599,8 @@ mcmcdx_gammaregeivunknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta0.5_CVy0.05_Tau
 mcmcdx_gammaregeivunknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta0.5_CVy0.05_Taux0.05_Tauxy1_Rho0_RatioCVme1_f8044be138c57ac2|branch|8dcf4144a45afbe6|339354367cf7c58e|f3e9448c4ec27294|-1971447665||t20670.609764367s|s339b|339|rds|local|vector|mcmcdx_gammaregeivunknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta0.5_CVy0.05_Taux0.05_Tauxy1_Rho0_RatioCVme1||0.641||
 mcmcdx_gammaregeivunknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta0.5_CVy0.05_Taux0.05_Tauxy1_Rho0_RatioCVme1|pattern|7d0621bf0ace37de|339354367cf7c58e||-1777111433||||1694|rds|local|vector||mcmcdx_gammaregeivunknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta0.5_CVy0.05_Taux0.05_Tauxy1_Rho0_RatioCVme1_8e10e5003de74f5d*mcmcdx_gammaregeivunknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta0.5_CVy0.05_Taux0.05_Tauxy1_Rho0_RatioCVme1_154380efb2fdddba*mcmcdx_gammaregeivunknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta0.5_CVy0.05_Taux0.05_Tauxy1_Rho0_RatioCVme1_7c051150024c0945*mcmcdx_gammaregeivunknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta0.5_CVy0.05_Taux0.05_Tauxy1_Rho0_RatioCVme1_f8044be138c57ac2*mcmcdx_gammaregeivunknowncvmex_Nsample200_Mux1_CVx0.5_Alpha0_Beta0.5_CVy0.05_Taux0.05_Tauxy1_Rho0_RatioCVme1_5053699ce6e9cd43|3.376||
 mcmcdx_Nsample200_Mux1_CVx0.5_Alpha0_Beta0.5_CVy0.05_Taux0.05_Tauxy1_Rho0_RatioCVme1|stem|82d09c4905b3f0bd|5728d809c6265884|ab2493a7a869cc94|-952922236||t20670.6097652894s|s2265b|2265|rds|local|vector|||0||
+predeval_summary|stem|5ca76b2e5120a8f2|68fd5544085b4291|7ced78b2be3d78e5|193531724||t20671.2912396753s|s51918b|51918|rds|local|vector|||0.047||
+mcmcdx_summary|stem|f1f57523a5882b41|3e406580caec9384|470946c5fa0336c5|-2092164576||t20671.2912399605s|s44634b|44634|rds|local|vector|||0.032||
 get_validation_data|function|d29621d57ae23fb0
 predx_summary|function|030df3b7152c8188
 combine_mcmcdx|function|9c7106f6cee75278
@@ -2611,6 +2613,4 @@ mcmc_dx|function|b344de6d91e46900
 summarise_predictions|function|db8886ce4f18201b
 sim_data_ECEC|function|7e0bea0810822479
 eval_preds_gamma|function|01f6941f57cc7ed6
-predeval_summary|stem|5ca76b2e5120a8f2|68fd5544085b4291|7ced78b2be3d78e5|193531724||t20671.2912396753s|s51918b|51918|rds|local|vector|||0.047||
-mcmcdx_summary|stem|f1f57523a5882b41|3e406580caec9384|470946c5fa0336c5|-2092164576||t20671.2912399605s|s44634b|44634|rds|local|vector|||0.032||
-report_simexp5bis|stem|8fa30f814a40fc9b|e46df4083d133688|f4e971aa752c9de7|736820876|source/quarto/analysis-simexp5bis.html*source/quarto/analysis-simexp5bis.qmd|t20671.2913687656s|s1458667b|1458667|file|local|vector|||11.141||
+report_simexp5bis|stem|45f60c92814d700f|e46df4083d133688|f4e971aa752c9de7|736820876|source/quarto/analysis-simexp5bis.html*source/quarto/analysis-simexp5bis.qmd|t20671.3041101668s|s1570101b|1570101|file|local|vector|||13.406||
