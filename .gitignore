@@ -59,7 +59,8 @@ archive/*
 # separate .gitignore file
 
 # cmdstanr: don't track the executables
-source/stan/*.exe
+source/stan-normal/*.exe
+source/stan-gamma/*.exe
 source/stan-ECEC/*.exe
 source/stan-PSD/*.exe
 
