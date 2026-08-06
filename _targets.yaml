@@ -13,6 +13,9 @@ project_simexp4:
 project_simexp5:
   script: _targets_simexp5.R
   store: store_simexp5
+project_simexp5bis:
+  script: _targets_simexp5bis.R
+  store: store_simexp5bis
 project_simexp6:
   script: _targets_simexp6.R
   store: store_simexp6
