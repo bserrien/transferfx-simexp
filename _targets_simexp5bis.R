@@ -117,12 +117,12 @@ list(
     mcmcdx_summary,
     mapped[["mcmcdx"]],
     command = bind_rows(!!!.x, .id = "scenario") %>% tidy_scenario_gamma()
-  )
+  ),
   
   # render a quarto report of the experiment
-  # tar_quarto(
-  #   report_simexp5bis,
-  #   path = here("source/quarto/analysis-simexp5bis.qmd")
-  # )
+  tar_quarto(
+    report_simexp5bis,
+    path = here("source/quarto/analysis-simexp5bis.qmd")
+  )
 )
 
