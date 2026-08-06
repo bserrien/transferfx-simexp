@@ -85,6 +85,9 @@ tidy_scenario_gamma <- function(df) {
                 "cvy","taux","tauxy","corr_mexy","ratio_cvme")
     ) %>%
     mutate(
+      alpha = case_when(alpha == "Alpha.0.5" ~ "Alpha-0.5",
+                        alpha == "Alpha.0.2" ~ "Alpha-0.2",
+                        TRUE ~ alpha),
       across(c(sample_size, mux, cvx, alpha, beta, 
                cvy, taux, tauxy, corr_mexy, ratio_cvme), 
              ~ as.numeric(gsub("[^0-9.-]", "", .x)))
