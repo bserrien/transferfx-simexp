@@ -146,8 +146,25 @@ ggplot(df, aes(x)) +
 
 ## Evaluation of the models
 
-MPE, MAE, RMSE, R2, SDPE, PICP
-.... [to do]
+We use the following metrics to evaluate the performance of the models in the validation datasets ($N$ = 1000 per replicate).
+
+$$
+\begin{aligned}
+
+\text{MPE} &= \frac{1}{N}\sum_{i=1}^N\left(\hat{y}_i - y_{\text{obs},i}\right) \\
+
+\text{MAE} &= \frac{1}{N}\sum_{i=1}^N\left|\hat{y}_i - y_{\text{obs},i}\right| \\
+
+\text{RMSE} &= \sqrt{\frac{1}{N}\sum_{i=1}^N\left(\hat{y}_i - y_{\text{obs},i}\right)^2} \\
+
+R^2 &= 1 - \frac{\sum_{i=1}^N\left(\hat{y}_i - y_{\text{obs},i} \right)^2}{\sum_{i=1}^N\left(\bar{y}_{\text{obs}} - y_{\text{obs},i}\right)^2} \\
+
+\text{SDPE} &= \sqrt{\frac{1}{N-1}\sum_{i=1}^N\left((\hat{y}_i - y_{\text{obs},i}) - \text{MPE}\right)^2}\\
+
+\text{PICP} &= \frac{1}{N}\sum_{i=1}^N I(\hat{y}^{.025}_i \leq y_{\text{obs},i} \leq \hat{y}^{.975}_i )
+
+\end{aligned}
+$$
 
 <br>
 
