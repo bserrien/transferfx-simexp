@@ -259,6 +259,49 @@ predeval_summary %>%
         legend.position = "bottom")
 ```
 
+```{r, warning=F}
+#| label: fig-calibration5
+#| fig-cap: "Results of the simulation experiment: MPE vs. SDPE. All points on the circles have the same RMSE. Restricted to scenario's with normal distribution of the measurement error, aggregated across sample sizes and ratio between SDs."
+
+predeval_summary %>%
+  filter(tails == "normal") %>%
+  mutate(
+    model = factor(model, c("linreg","eivreg1","eivreg2"),
+                   c("Linear regression","EIV model\n(known SD)",
+                     "EIV model\n(prior on SD)"))
+  ) %>%
+  ggplot(aes(MPE, SDPE, color = model)) +
+  geom_point() +
+  ggforce::geom_circle(inherit.aes = F, aes(x0=0, y0=0, r=.15)) +
+  ggforce::geom_circle(inherit.aes = F, aes(x0=0, y0=0, r=.3)) +
+  coord_fixed(ylim = c(0, NA), 
+              xlim = c(1.1*min(predeval_summary$MPE), 
+                       1.1*max(predeval_summary$MPE))) +
+  theme_minimal()
+```
+
+```{r, warning=F}
+#| label: fig-calibration6
+#| fig-cap: "Results of the simulation experiment: "
+
+predeval_summary %>%
+  mutate(
+    pct_bias = MPE^2 / RMSE^2,
+    model = factor(model, c("linreg","eivreg1","eivreg2"),
+                   c("Linear regression","EIV model\n(known SD)",
+                     "EIV model\n(prior on SD)"))
+  ) %>%
+  ggplot(aes(tails, pct_bias, color = model)) +
+  geom_boxplot(position = position_dodge(.8)) +
+  geom_jitter(position = position_dodge(.8)) +
+  scale_y_continuous(
+    name = "% bias",
+    sec.axis = sec_axis(~ 1 - ., name = "% variance")
+  ) +
+  facet_grid(sample_size ~ taux, labeller = "label_both") +
+  theme_minimal()
+```
+
 ```{r, echo = FALSE}
 #| label: tab-calibration1
 #| tab-cap: "TABLE"
