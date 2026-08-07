@@ -128,6 +128,54 @@ predeval_summary %>%
         legend.position = "bottom")
 ```
 
+```{r, warning=F, echo=F}
+#| label: fig-calibration6
+#| fig-cap: "Results of the simulation experiment: %bias and %variance"
+
+predeval_summary %>%
+  mutate(
+    pct_bias = MPE^2 / RMSE^2,
+    model = factor(model, c("linreg","eivreg11","eivreg12","eivreg2"),
+                   c("Linear regression",
+                     "EIV model\n(known SD training)",
+                     "EIV model\n(known SD training + validation)",
+                     "EIV model\n(prior on SD)"))
+  ) %>%
+  ggplot(aes(factor(ratio_sdme), pct_bias, color = model)) +
+  geom_boxplot(position = position_dodge(.8)) +
+  geom_jitter(position = position_dodge(.8)) +
+  scale_y_continuous(
+    name = "% bias", labels = scales::percent,
+    sec.axis = sec_axis(~ 1 - ., name = "% variance", labels = scales::percent)
+  ) +
+  labs(x = expression(sigma[uv]/sigma[ut])) +
+  theme_minimal()
+```
+
+```{r, warning=F, echo=F}
+#| label: fig-calibration5
+#| fig-cap: "Results of the simulation experiment: MPE vs. SDPE. All points on the circles have the same RMSE. Aggregated across ratio_sdme and tau_x"
+
+predeval_summary %>%
+  mutate(
+    model = factor(model, c("linreg","eivreg11","eivreg12","eivreg2"),
+                   c("Linear regression",
+                     "EIV model\n(known SD training)",
+                     "EIV model\n(known SD training + validation)",
+                     "EIV model\n(prior on SD)"))
+  ) %>%
+  ggplot(aes(MPE, SDPE, color = model)) +
+  geom_point(alpha = .3) +
+  ggforce::geom_circle(inherit.aes = F, aes(x0=0, y0=0, r=.2)) +
+  ggforce::geom_circle(inherit.aes = F, aes(x0=0, y0=0, r=.4)) +
+  coord_fixed(ylim = c(0, NA), 
+              xlim = c(1.1*min(predeval_summary$MPE), 
+                       1.1*max(predeval_summary$MPE))) +
+  geom_vline(xintercept = 0, lty = 2) +
+  geom_hline(yintercept = 0, lty = 2) +
+  theme_minimal()
+```
+
 The following figure display the $\hat{R}$ statistic of the MCMC for each of the model parameters. The red dashed lines are at 1.00 and 1.01. The boxplots are aggregated across scenario's because the values were similar in each of them and all well below 1.01.
 
 ```{r mcmc-dx, echo = F, warning = F}

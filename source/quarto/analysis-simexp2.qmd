@@ -31,23 +31,7 @@ predeval_summary$regdilution <- regdilution_vctr
 
 ## Design of the experiment
 
-We simulate data according to the following method ($X$ = non-reference method, $Y$ = reference method). We first simulate a latent (true) value for the non-reference method using a normal distribution: $X_{\mathrm{true}} \sim \mathcal{N}(\mu_x, \sigma_x^2)$ and then use this value to simulate a value for the latent reference method, assuming a linear relation between both methods and some structural noise that is not due to measurement error: $Y_{\mathrm{true}} \sim \mathcal{N}(\alpha + \beta X_{\mathrm{true}}, \sigma_y^2)$. We then add measurement noise to both methods (resulting from both field and lab measurement processes). In the notation below we assume bivariate normal measurement error, but it is defined analogously for bivariate Student-$t$ distributed measurement error:
-$$
-\begin{pmatrix} X_{\mathrm{obs}}\\ Y_{\mathrm{obs}} \end{pmatrix} 
-\sim \mathcal{N}
-\left(
-\begin{pmatrix} X_{\mathrm{true}}\\ Y_{\mathrm{true}} \end{pmatrix},
-\begin{pmatrix} \sigma_u^2\ & \rho\sigma_u\sigma_v \\ \rho\sigma_u\sigma_v & \sigma_v^2 \end{pmatrix}
-\right)
-$$
-The measurement noise magnitudes are expressed as ratio's of the SD of the latent $X$:
-$$
-\begin{aligned}
-\sigma_u &= \tau_x\sigma_x \\
-\sigma_v &= \tau_{xy}\sigma_u
-\end{aligned}
-$$
-In this experiment we focus on the effect of the structural noise in the reference method that is not explained by the non-reference method ($\sigma_y$) and the correlation between the measurement error of both methods ($\rho$). Other parameter values are kept fixed:
+Same as experiment 1. In this experiment we focus on the effect of the structural noise in the reference method that is not explained by the non-reference method ($\sigma_y$) and the correlation between the measurement error of both methods ($\rho$). Other parameter values are kept fixed:
 
 | Parameter              | Values                                    |
 |------------------------|-------------------------------------------|
@@ -164,6 +148,51 @@ predeval_summary %>%
   theme_minimal() +
   theme(strip.text = element_text(face = "bold"),
         legend.position = "bottom")
+```
+
+```{r, warning=F, echo=F}
+#| label: fig-calibration6
+#| fig-cap: "Results of the simulation experiment: %bias and %variance"
+
+predeval_summary %>%
+  mutate(
+    pct_bias = MPE^2 / RMSE^2,
+    model = factor(model, c("linreg","eivreg1","eivreg2"),
+                   c("Linear regression","EIV model\n(known SD)",
+                     "EIV model\n(prior on SD)"))
+  ) %>%
+  ggplot(aes(factor(sigmay_struct), pct_bias, color = model)) +
+  geom_boxplot(position = position_dodge(.8)) +
+  geom_jitter(position = position_dodge(.8)) +
+  scale_y_continuous(
+    name = "% bias", labels = scales::percent,
+    sec.axis = sec_axis(~ 1 - ., name = "% variance", labels = scales::percent)
+  ) +
+  facet_wrap(~ corrme, labeller = "label_both") +
+  theme_minimal()
+```
+
+```{r, warning=F, echo=F}
+#| label: fig-calibration5
+#| fig-cap: "Results of the simulation experiment: MPE vs. SDPE. All points on the circles have the same RMSE. Aggregated across sigma_y and corr_me"
+
+predeval_summary %>%
+  filter(tails == "normal") %>%
+  mutate(
+    model = factor(model, c("linreg","eivreg1","eivreg2"),
+                   c("Linear regression","EIV model\n(known SD)",
+                     "EIV model\n(prior on SD)"))
+  ) %>%
+  ggplot(aes(MPE, SDPE, color = model)) +
+  geom_point(alpha = .3) +
+  ggforce::geom_circle(inherit.aes = F, aes(x0=0, y0=0, r=.1)) +
+  ggforce::geom_circle(inherit.aes = F, aes(x0=0, y0=0, r=.2)) +
+  coord_fixed(ylim = c(0, NA), 
+              xlim = c(1.1*min(predeval_summary$MPE), 
+                       1.1*max(predeval_summary$MPE))) +
+  geom_vline(xintercept = 0, lty = 2) +
+  geom_hline(yintercept = 0, lty = 2) +
+  theme_minimal()
 ```
 
 The following figure display the $\hat{R}$ statistic of the MCMC for each of the model parameters. The red dashed lines are at 1.00 and 1.01. The boxplots are aggregated across scenario's because the values were similar in each of them and all well below 1.01.

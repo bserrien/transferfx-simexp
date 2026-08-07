@@ -12,10 +12,17 @@ tar_option_set(
   controller = crew_controller_local(workers = 5)
 )
 tar_source(
-  files = here("source", "R")
+  files = c(
+    here("source/R/design-simexp-normal.R"),
+    here("source/R/simulate-data-normal.R"),
+    here("source/R/predictions.R"),
+    here("source/R/evaluate-predictions.R"),
+    here("source/R/utils.R")
+  )
 )
 
 labs <- colnames(simexp_design4)[grepl("_label", colnames(simexp_design4))]
+rm(simexp_design1, simexp_design2, simexp_design3)
 
 
 ### ---------------- ###
@@ -32,9 +39,9 @@ list(
     # the function sim_data returns both a training and a validation dataset
     tar_stan_mcmc_rep_draws(
       name       = mcmc,
-      stan_files = c(here("source/stan/linreg.stan"),
-                     here("source/stan/eivreg_known_sdmex.stan"),
-                     here("source/stan/eivreg_unknown_sdmex.stan")),
+      stan_files = c(here("source/stan-normal/linreg.stan"),
+                     here("source/stan-normal/eivreg_known_sdmex.stan"),
+                     here("source/stan-normal/eivreg_unknown_sdmex.stan")),
       data = sim_data(
         ratio_sdmex_sigmax      = ratio_sdmex_sigmax,
         ratio_sdmeval_sdmetrain = ratio_sdmeval_sdmetrain

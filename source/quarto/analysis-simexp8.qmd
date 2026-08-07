@@ -185,9 +185,79 @@ predeval %>%
         legend.position = "bottom")
 ```
 
+```{r, warning=F, echo=F}
+#| label: fig-calibration6
+#| fig-cap: "Results of the simulation experiment: %bias and %variance"
+
+predeval %>%
+  mutate(
+    pct_bias = MPE^2 / RMSE^2,
+    model = factor(
+      model, c("linreg","linreglogtrafo","gammareg",
+               "gammaregeivknowncvmex","gammaregeivunknowncvmex"),
+      c("Linear regression","Linear regression\n(logtransformed data)",
+        "Gamma GLM","Gamma EIV\n(known CV mex)","Gamma EIV\n(prior on CV mex)")
+    )
+  ) %>%
+  ggplot(aes(model, pct_bias, color = model)) +
+  geom_boxplot() +
+  geom_jitter() +
+  scale_y_continuous(
+    name = "% bias", labels = scales::percent,
+    sec.axis = sec_axis(~ 1 - ., name = "% variance", labels = scales::percent)
+  ) +
+  theme_minimal()
+```
+
+```{r, warning=F, echo=F}
+#| label: fig-calibration7
+#| fig-cap: "Results of the simulation experiment: MPE vs. SDPE. All points on the circles have the same RMSE."
+
+predeval %>%
+  mutate(
+    model = factor(
+      model, c("linreg","linreglogtrafo","gammareg",
+               "gammaregeivknowncvmex","gammaregeivunknowncvmex"),
+      c("Linear regression","Linear regression\n(logtransformed data)",
+        "Gamma GLM","Gamma EIV\n(known CV mex)","Gamma EIV\n(prior on CV mex)")
+    )
+  ) %>%
+  ggplot(aes(MPE, SDPE, color = model)) +
+  geom_point(alpha = .3) +
+  ggforce::geom_circle(inherit.aes = F, aes(x0=0, y0=0, r=75)) +
+  ggforce::geom_circle(inherit.aes = F, aes(x0=0, y0=0, r=125)) +
+  coord_fixed(ylim = c(0, NA), 
+              xlim = c(1.1*min(predeval$MPE), 
+                       1.1*max(predeval$MPE))) +
+  geom_vline(xintercept = 0, lty = 2) +
+  geom_hline(yintercept = 0, lty = 2) +
+  theme_minimal()
+```
 
 
+### Model diagnostics: MCMC $\hat{R}$
 
+The following figures display the $\hat{R}$ statistic of the MCMC for each of the model parameters. The red dashed lines are at 1.00 and 1.01. The boxplots are aggregated across scenario's. The Gamma EIV-model with unknown $CV$ of the measurement error suffers from poor mixing.
 
+```{r mcmc-dx, echo = F, warning = F}
+targets::tar_load(mcmcdx,  store = prj_store)
+
+mcmcdx %>%
+  pivot_longer(-c(.rep, model), names_to = "parameter", values_to = "Rhat") %>%
+  filter(!is.na(Rhat)) %>%
+  mutate(
+    model = factor(
+      model, c("linreg","linreglogtrafo","gammareg",
+               "gammaregeivknowncvmex","gammaregeivunknowncvmex"),
+      c("Linear regression","Linear regression\n(logtransformed data)",
+        "Gamma GLM","Gamma EIV\n(known CV mex)","Gamma EIV\n(prior on CV mex)")
+    )
+  ) %>%
+  ggplot(aes(Rhat, parameter)) +
+  facet_wrap(~ model, scales = "free_x") +
+  geom_boxplot() +
+  geom_vline(xintercept = c(1.00, 1.01), lty = 2, color = "red") +
+  theme_minimal()
+```
 
 

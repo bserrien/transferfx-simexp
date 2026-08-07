@@ -2,7 +2,7 @@
 
 #' @title eval_preds
 #' @param ... set of models to evaluate, passed as different arguments
-eval_preds <- function(..., fx_valmetrics) {
+eval_preds <- function(...) {
   preds        <- list(...)
   names(preds) <- stringr::str_split_i(
     as.character(as.list(substitute(list(...)))[-1]),
@@ -13,7 +13,7 @@ eval_preds <- function(..., fx_valmetrics) {
       mutate(model = names(preds)[i])
   }
   data.table::rbindlist(
-    lapply(preds, fx_valmetrics)
+    lapply(preds, val_metrics)
   )
 }
 
