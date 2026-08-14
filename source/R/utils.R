@@ -96,3 +96,24 @@ tidy_scenario_gamma <- function(df) {
 }
 
 
+#' @title tidy_scenario_simplex
+#' @description
+#' Extract scenario parameters from the scenario column
+#' @param df ....
+tidy_scenario_simplex <- function(df) {
+  df %>%
+    separate_wider_delim(
+      scenario, "_", 
+      names = c("x","sample_size","alpha","beta",
+                "sigma","sd_mex","tauxy","corr_mexy")
+    ) %>%
+    mutate(
+      alpha = case_when(alpha == "Alpha.0.5" ~ "Alpha-0.5",
+                        alpha == "Alpha.0.2" ~ "Alpha-0.2",
+                        TRUE ~ alpha),
+      across(c(sample_size, alpha, beta, 
+               sigma, sd_mex, tauxy, corr_mexy), 
+             ~ as.numeric(gsub("[^0-9.-]", "", .x)))
+    ) %>%
+    select(-x)
+}

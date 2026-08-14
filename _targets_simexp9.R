@@ -36,20 +36,46 @@ list(
     # and a validation dataset
     tar_stan_mcmc_rep_draws(
       name       = mcmc,
-      stan_files = c(here("source/stan-PSD/mvlinreg.stan")),
+      stan_files = c(here("source/stan-PSD/mvlinreg.stan"),
+                     here("source/stan-PSD/mvlinreg_knownSDme.stan")),
+                     # dirichlet regression is very slow and less accurate
+                     #here("source/stan-PSD/dirichlet.stan")
       data = sim_data_simplex(
-        
+        N         = N,
+        sigma_ilr = sigma_ilr
       ),
       seed          = 123,
       chains        = 4, parallel_chains = 4,
       iter_warmup   = 1000,
       iter_sampling = 1000,
       refresh       = 0,
-      batches       = 1,
-      reps          = 1,
+      batches       = 5,
+      reps          = 2,
       stdout = R.utils::nullfile(),
       stderr = R.utils::nullfile()
+    ),
+    
+    # evaluate predictions
+    tar_target(
+      preds_mvlinreg,
+      summarise_predictions(mcmc_mvlinreg, mcmc_data),
+      pattern = map(mcmc_mvlinreg, mcmc_data)
+    ),
+    tar_target(
+      preds_mvlinregknownSDme,
+      summarise_predictions(mcmc_mvlinreg_knownSDme, mcmc_data),
+      pattern = map(mcmc_mvlinreg_knownSDme, mcmc_data)
+    ),
+    tar_target(
+      predsummary,
+      eval_preds_simplex(preds_mvlinreg, preds_mvlinregknownSDme)
     )
-  )
+  ),
   
+  # combine results across scenario's
+  tar_combine(
+    predeval_summary,
+    mapped[["predsummary"]],
+    command = bind_rows(!!!.x, .id = "scenario") %>% tidy_scenario_simplex()
+  )
 )

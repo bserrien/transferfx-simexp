@@ -1,0 +1,212 @@
+---
+title: "Simulation experiment (9)"
+format: 
+  html:
+    embed-resources: true
+toc: true
+code-fold: true
+---
+
+```{r packages, echo = F}
+library(tidyverse) |> suppressPackageStartupMessages()
+library(targets) |> suppressPackageStartupMessages()
+library(tarchetypes) |> suppressPackageStartupMessages()
+library(here) |> suppressPackageStartupMessages()
+library(ggtern) |> suppressPackageStartupMessages()
+ 
+# set the _target store library of the project (for interactive use)
+prj_store <- here("store_simexp9")
+```
+
+
+## Design of the experiment
+
+The design of the experiment is analogous to the experiment with normally and gamma distributed data, but some alterations were made to accommodate for compositional data. Particle size distribution of soil are compositional data because they are constrained to sum to 1 (clay + silt + sand = 100%; $K$ = 3 for the 3-dimensional simplex of particle size distribution).
+
+We make use of the isometric log-ratio (ILR) transformation between the 3-dimensional simplex ($*$) and the 2-dimensional real space because it is easier to work in the latter. Denote an observation ($i = 1, \dots, N)$ of the tuple of clay, silt, sand as $\mathbf{p}_i^* = (p_{i1}^*, p_{i2}^*, p_{i3}^*)$ (summing to 1; the ordering of components is not of interest as we do not need to interpret model coefficients, we are only interested in making predictions, hence we use the ordering clay-silt-sand throughout). The isometric log-ratio is defined as follows, transforming the 3-dimensional simplex to the 2-dimensional real space with the two real components ($\mathbf{p}$) being orthogonal:
+$$
+\begin{align}
+p_{i1} &= \sqrt{\frac{1}{2}} \log\left(\frac{p_{i1}^*}{p_{i2}^*}\right) \\
+p_{i2} &= \sqrt{\frac{2}{3}} \log\left(\frac{\sqrt{p_{i1}^*p_{i2}^*}}{p_{i3}^*}\right)
+\end{align}
+$$
+The original components can be recovered with the inverse operation. 
+
+We simulate data according to the following method (notation: $X$ = non-reference method, $Y$ = reference method). We first simulate a latent (true) value for the non-reference method on the ILR-scale by sampling from a bivariate Gaussian distribution with mean $\mathbf{\mu}$ and (co-)variance matrix $\mathbf{\Sigma}$. These are then translated to latent values of the reference method on the ILR-scale by a linear regression model (each component is subjected to the same $\alpha$ and $\beta$ but this restriction could be relaxed) and some structural noise is added (the gaussian noise is assumed to be independent between the two components):
+
+$$
+\begin{align}
+\mathbf{x}_{i,\text{true}} &\sim \mathbf{N}(\mathbf{\mu}, \mathbf{\Sigma}) \\
+\mathbf{y}_{i,\text{true}} &\sim \mathbf{N}(\alpha + \beta\mathbf{x}_{i,\text{true}}, \sigma^2\mathbf{I}_2)
+\end{align}
+$$ {#latents}
+
+Next we add measurement error to both latent variables to represent observed values. We use Gaussian additive measurement error on the ILR-scale. For the non-reference method we set the SD of the measurement error to be $\sigma_u$ and we express the SD for the reference method to be proportional to it: $\sigma_v = \tau_{xy}\sigma_u$. We assume that the measurement error is independent between the two components on the ILR-scale within each method, but we allow for a correlation (of strength $\rho$) between the corresponding components of both methods.
+
+$$
+\begin{align}
+\mathbf{\Sigma}_{\epsilon} &= 
+\begin{pmatrix} 
+\sigma_u^2 & 0 & \rho\sigma_u\sigma_v & 0 \\
+0 & \sigma_u^2 & 0 & \rho\sigma_u\sigma_v \\
+\rho\sigma_u\sigma_v & 0 & \sigma_v^2 & 0 \\
+0 & \rho\sigma_u\sigma_v & 0 & \sigma_v^2 
+\end{pmatrix}
+\\
+\begin{pmatrix}
+\mathbf{x}_{i,\text{obs}} \\
+\mathbf{y}_{i,\text{obs}}
+\end{pmatrix} &\sim
+\mathbf{N}\left(
+\begin{pmatrix}
+\mathbf{x}_{i,\text{true}} \\
+\mathbf{y}_{i,\text{true}}
+\end{pmatrix},
+\mathbf{\Sigma}_{\epsilon}
+\right)
+\end{align}
+$$
+
+Below we show an example of a simulated dataset of 5 observations. We visualize them on the ternary plot after applying the inverse ILR transformation:
+
+```{r, echo = F}
+source(here("source/R/simulate-data-simplex.R"))
+
+set.seed(123)
+data_test <- sim_data_simplex()
+
+spc <- data.frame(
+  .name = c("x_true_clay","x_true_silt","x_true_sand",
+            "y_true_clay","y_true_silt","y_true_sand",
+            "x_obs_clay","x_obs_silt","x_obs_sand",
+            "y_obs_clay","y_obs_silt","y_obs_sand"),
+  .value = rep(c("clay","silt","sand"), 4),
+  value = rep(c("true","observed"), each = 6),
+  method = rep(rep(c("non-reference","reference"), each = 3), 2)
+)
+
+set.seed(123)
+data_test$psd_new %>%
+  slice_sample(n = 5) %>%
+  pivot_longer_spec(spc) %>%
+  ggtern(aes(sand, clay, silt, color = method, group = id)) +
+  geom_point() + geom_line(color = "grey") +
+  facet_wrap(~ value) +
+  theme_arrowlarge() +
+  theme(legend.position = "inside",
+        legend.position.inside = c(.5, .7))
+```
+
+In this experiment we focus on the sample size and $\sigma$ (see @eq-latents).
+
+
+## Models
+
+We fit three models to predict the 
+
+### Multivariate linear regression
+
+### Multivariate linear regression with known (co-)variance of the measurement error
+
+### Multivariate linear regression with a prior on the (co-)variance of the measurement error
+
+.... to do
+
+
+
+## Prediction metrics
+
+As before, for each replicate, we simulate a calibration dataset of a given sample size and a validation dataset of 1000 observations that are not used in the model fitting and evaluate the predictive performance in these hold-out observations.
+
+To evaluate the predictive performance of the models we focus on just two metrics: bias and coverage. For the bias we use the Aitchinson distance as computed with the `compositions::norm()` function applied on the observed composition minus the prediction point estimate. We calcualte the MAD (mean Aitchinson distance) over 1000 new observations per replicate. For the coverage we calculate a 95% prediction ellipse using the bivariate normal approximation in the ILR-space: we scale the unit circle with the critical value from the chi-square distribution $\chi^2_{.95,\ df=2}$ and elongate it to an ellipse according to the Cholesky decomposition of the covariance-matrix of the residuals, and then center it back to the point estimate. If the observed ILR-coordinates of the new point fall in this ellipse, the observed tuple will fall in the back-transformed prediction ellipse on the simplex. These metrics were designed with a lot of help from Claude-AI but I tested it in several examples which gives reasonable estimates and I also examined the assumption of bivariate normality of the residuals which was fine. We illustrate with an example below:
+
+```{r, echo = F, warning = F, message = F}
+source(here("source/R/simulate-data-simplex.R"))
+source(here("source/R/evaluate-predictions-simplex.R"))
+
+set.seed(123)
+data_test <- sim_data_simplex()
+
+library(cmdstanr)
+mod <- cmdstan_model(here("source/stan-PSD/mvlinreg.stan"))
+fit <- mod$sample(data = data_test, show_messages = F, show_exceptions = F)
+
+# take first row as example
+example <- data_test$psd_new[2,] %>%
+  select(y_obs_clay, y_obs_silt, y_obs_sand,
+         x_obs_clay, x_obs_silt, x_obs_sand)
+
+draws <- fit$draws(format = "df") %>%
+  select(`ilr_y_obs_new_rep[2,1]`, `ilr_y_obs_new_rep[2,2]`)
+est       <- colMeans(draws)
+err       <- sweep(draws, 2, compositions::ilr(example[1:3]), "-")
+err_mean  <- colMeans(err)
+err_sigma <- cov(err)
+L         <- chol(err_sigma) 
+crit      <- sqrt(qchisq(0.95, df = 2))
+theta     <- seq(0, 2*pi, length.out = 200)
+circle    <- cbind(cos(theta), sin(theta))
+ellipse_ilr <- crit * (circle %*% L)
+ellipse_ilr <- sweep(ellipse_ilr, 2, est, "+")
+
+# posterior predictive samples on the simplex:
+pps_simplex <- compositions::ilrInv(draws)
+colnames(pps_simplex) <- c("clay","silt","sand")
+
+ellipse <- compositions::ilrInv(ellipse_ilr)
+colnames(ellipse) <- c("clay","silt","sand")
+
+est_simplex <- compositions::ilrInv(est)
+colnames(est_simplex) <- c("clay","silt","sand")
+
+ggtern() +
+  geom_point(data = pps_simplex, aes(sand, clay, silt), alpha = .1) +
+  geom_point(data = est_simplex, aes(sand, clay, silt), color = "yellow") +
+  geom_point(data = ellipse, aes(sand, clay, silt), color = "blue", size = .5) +
+  geom_point(data = example, aes(y_obs_sand, y_obs_clay, y_obs_silt), 
+             color = "red") + 
+  geom_point(data = example, aes(x_obs_sand, x_obs_clay, x_obs_silt), 
+             color = "green") + 
+  theme_arrowlarge() +
+  labs(
+    caption = paste0("Green = observed non-reference method (predictor)\n",
+                     "Red = observed reference method (target)\n",
+                     "Black = posterior predictive samples\n",
+                     "Yellow = posterior point estimate\n",
+                     "Blue = 95% prediction ellipse")
+  )
+
+# calculate Aitchinson distance (Yellow - Red):
+AD <- compositions::norm(est_simplex - compositions::acomp(example[1:3]))
+names(AD) <- "Aitchinson distance (Yellow - Red)"
+AD
+```
+
+
+## Results
+
+```{r}
+#| fig-cap: "Validation metrics in function of sample size and sigma (residual variance of the linear regression between the latent values)."
+
+tar_load(predeval_summary, store = prj_store)
+
+predeval_summary %>%
+  pivot_longer(c(MAD, PECP), names_to = "metric", values_to = "value") %>%
+  mutate(
+    metric = factor(metric, c("MAD","PECP")),
+    model = factor(model, c("mvlinreg","mvlinregknownSDme"),
+                   c("Multivariate linear regression",
+                     "EIV multivariate linear regression\n(known SD)"))
+  ) %>%
+  ggplot(aes(factor(sample_size), value, colour = model)) +
+  facet_grid(metric ~ sigma, scales = "free_y", labeller = "label_both") +
+  geom_boxplot() +
+  geom_point(position = position_jitterdodge(.1, 0)) +
+  labs(y = "", x = "sample size", color = "Models") +
+  theme_minimal() +
+  theme(strip.text = element_text(face = "bold"),
+        legend.position = "bottom")
+
+```
+
+

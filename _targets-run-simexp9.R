@@ -17,3 +17,9 @@ tar_make()
 
 tar_objects()
 
+tar_load(mcmc_mvlinreg_knownSDme_Nsample100_AlphaIlr0_BetaIlr1_SigmaIlr0.1_SDmex0.1_RatioSDme1_CorrMe0_c57fd7db0b4834ce)
+
+tar_load(preds_mvlinreg_Nsample100_AlphaIlr0_BetaIlr1_SigmaIlr0.1_SDmex0.1_RatioSDme1_CorrMe0_4814ac7cfae21f23)
+
+tar_load(preds_summary_Nsample100_AlphaIlr0_BetaIlr1_SigmaIlr0.1_SDmex0.1_RatioSDme1_CorrMe0)
+
