@@ -32,16 +32,16 @@ p_{i2} &= \sqrt{\frac{2}{3}} \log\left(\frac{\sqrt{p_{i1}^*p_{i2}^*}}{p_{i3}^*}\
 $$
 The original components can be recovered with the inverse operation. 
 
-We simulate data according to the following method (notation: $X$ = non-reference method, $Y$ = reference method). We first simulate a latent (true) value for the non-reference method on the ILR-scale by sampling from a bivariate Gaussian distribution with mean $\mathbf{\mu}$ and (co-)variance matrix $\mathbf{\Sigma}$. These are then translated to latent values of the reference method on the ILR-scale by a linear regression model (each component is subjected to the same $\alpha$ and $\beta$ but this restriction could be relaxed) and some structural noise is added (the gaussian noise is assumed to be independent between the two components):
+We simulate data according to the following method (notation: $X$ = non-reference method, $Y$ = reference method). We first simulate a latent (true) value for the non-reference method on the ILR-scale by sampling from a bivariate Gaussian distribution with mean $\mathbf{\mu}$ and (co-)variance matrix $\mathbf{\Sigma}$. These are then translated to latent values of the reference method on the ILR-scale by a linear regression model (each component is subjected to the same $\alpha$ and $\beta$ but this restriction could be relaxed) and some structural noise is added (the gaussian noise is assumed to be independent between the two components and of the same magnitude):
 
 $$
 \begin{align}
 \mathbf{x}_{i,\text{true}} &\sim \mathbf{N}(\mathbf{\mu}, \mathbf{\Sigma}) \\
 \mathbf{y}_{i,\text{true}} &\sim \mathbf{N}(\alpha + \beta\mathbf{x}_{i,\text{true}}, \sigma^2\mathbf{I}_2)
 \end{align}
-$$ {#latents}
+$$ {#eq-latents}
 
-Next we add measurement error to both latent variables to represent observed values. We use Gaussian additive measurement error on the ILR-scale. For the non-reference method we set the SD of the measurement error to be $\sigma_u$ and we express the SD for the reference method to be proportional to it: $\sigma_v = \tau_{xy}\sigma_u$. We assume that the measurement error is independent between the two components on the ILR-scale within each method, but we allow for a correlation (of strength $\rho$) between the corresponding components of both methods.
+Next we add measurement error to both latent variables to represent observed values. We use Gaussian additive measurement error on the ILR-scale. For the non-reference method we set the SD of the measurement error to be $\sigma_u$ and we express the SD for the reference method to be proportional to it: $\sigma_v = \tau_{xy}\sigma_u$ (the default is $\tau_{xy} = 1$ but we will examine other values too). We assume that the measurement error is independent between the two components on the ILR-scale within each method, but we allow for a correlation (of strength $\rho$) between the corresponding components of both methods (the default is $\rho = 0$ but we will examine other values too).
 
 $$
 \begin{align}
@@ -69,7 +69,7 @@ $$
 
 Below we show an example of a simulated dataset of 5 observations. We visualize them on the ternary plot after applying the inverse ILR transformation:
 
-```{r, echo = F}
+```{r}
 source(here("source/R/simulate-data-simplex.R"))
 
 set.seed(123)
@@ -120,7 +120,7 @@ As before, for each replicate, we simulate a calibration dataset of a given samp
 
 To evaluate the predictive performance of the models we focus on just two metrics: bias and coverage. For the bias we use the Aitchinson distance as computed with the `compositions::norm()` function applied on the observed composition minus the prediction point estimate. We calcualte the MAD (mean Aitchinson distance) over 1000 new observations per replicate. For the coverage we calculate a 95% prediction ellipse using the bivariate normal approximation in the ILR-space: we scale the unit circle with the critical value from the chi-square distribution $\chi^2_{.95,\ df=2}$ and elongate it to an ellipse according to the Cholesky decomposition of the covariance-matrix of the residuals, and then center it back to the point estimate. If the observed ILR-coordinates of the new point fall in this ellipse, the observed tuple will fall in the back-transformed prediction ellipse on the simplex. These metrics were designed with a lot of help from Claude-AI but I tested it in several examples which gives reasonable estimates and I also examined the assumption of bivariate normality of the residuals which was fine. We illustrate with an example below:
 
-```{r, echo = F, warning = F, message = F}
+```{r, message=F, warning=F}
 source(here("source/R/simulate-data-simplex.R"))
 source(here("source/R/evaluate-predictions-simplex.R"))
 
@@ -131,7 +131,7 @@ library(cmdstanr)
 mod <- cmdstan_model(here("source/stan-PSD/mvlinreg.stan"))
 fit <- mod$sample(data = data_test, show_messages = F, show_exceptions = F)
 
-# take first row as example
+# take one of the first rows as example
 example <- data_test$psd_new[2,] %>%
   select(y_obs_clay, y_obs_silt, y_obs_sand,
          x_obs_clay, x_obs_silt, x_obs_sand)
@@ -139,7 +139,7 @@ example <- data_test$psd_new[2,] %>%
 draws <- fit$draws(format = "df") %>%
   select(`ilr_y_obs_new_rep[2,1]`, `ilr_y_obs_new_rep[2,2]`)
 est       <- colMeans(draws)
-err       <- sweep(draws, 2, compositions::ilr(example[1:3]), "-")
+err       <- sweep(draws, 2, est, "-")
 err_mean  <- colMeans(err)
 err_sigma <- cov(err)
 L         <- chol(err_sigma) 
@@ -157,6 +157,7 @@ ellipse <- compositions::ilrInv(ellipse_ilr)
 colnames(ellipse) <- c("clay","silt","sand")
 
 est_simplex <- compositions::ilrInv(est)
+dim(est_simplex) <- c(1, 3)
 colnames(est_simplex) <- c("clay","silt","sand")
 
 ggtern() +
