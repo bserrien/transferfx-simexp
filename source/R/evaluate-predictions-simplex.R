@@ -68,7 +68,7 @@ ilr_err <- function(obs, pred, crit, circle) {
   est   <- colMeans(pred) # point-estimate in ILR-space
   adist <- compositions::norm(obs - est)
   # prediction coverage:
-  err         <- sweep(pred, 2, obs, "-")
+  err         <- sweep(pred, 2, est, "-")
   err_mean    <- colMeans(err)
   err_sigma   <- cov(err)
   L           <- chol(err_sigma) # scale/rotate unit circle into the ellipse
