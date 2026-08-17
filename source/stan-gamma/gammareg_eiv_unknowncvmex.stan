@@ -21,8 +21,8 @@ parameters {
   real<lower=0> mu_x;
   real<lower=0> cv_x;
   vector<lower=0>[N] x_true;
-  // measurement error: shape of the gamma
-  real<lower=0> shape_mex;
+  // measurement error: CV of the gamma (mirrors cv_x's parameterization)
+  real<lower=0> cv_mex;
   // latent true x for the *new* (to-be-predicted) observations
   vector<lower=0>[N_new] x_true_new;
 }
@@ -33,6 +33,8 @@ transformed parameters {
   // latent variable: shape/rate of the gamma
   real<lower=0> shape_x = inv_square(cv_x);
   real<lower=0> rate_x  = shape_x / mu_x;
+  // measurement error: shape of the gamma, derived from its CV
+  real<lower=0> shape_mex = inv_square(cv_mex);
   // regression layer for new observations
   vector[N_new] mu_new = exp(beta0 + beta1 * log(x_true_new));
 }
@@ -47,7 +49,7 @@ model {
   cv_x   ~ lognormal(0, 1);
   x_true ~ gamma(shape_x, rate_x);
   // measurement error
-  shape_mex ~ lognormal(0, 1);
+  cv_mex ~ lognormal(0, 1);
   x_obs ~ gamma(shape_mex, shape_mex ./ x_true);
   // likelihood
   y_obs ~ gamma(shape, shape ./ mu);
