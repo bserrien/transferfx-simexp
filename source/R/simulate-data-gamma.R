@@ -91,7 +91,9 @@ sim_data_gamma <- function(
     y_true_new = y_true_val, # not used by STAN
     x_obs_new  = x_obs_val,
     y_obs_new  = y_obs_val,   # not used by STAN
-    cv_mex_val = cv_mex_val  # only for use in the EIV-model with known CV in the validation data
+    cv_mex_val = cv_mex_val,  # only for use in the EIV-model with known CV in the validation data
+    # Appending the validation data frame to the output list
+    validation_data = data_val # not used by STAN
   )
   
   return(df_stan)
