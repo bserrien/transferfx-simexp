@@ -46,7 +46,7 @@ sim_data_simplex <- function(
     )
   )
   ilr_x_obs <- ilr_x + eps_xy[, 1:2]
-  ilr_x_obs <- mutate(ilr_x_obs, X0 = 1, .before = X1) # intercept
+  ilr_x_obs <- cbind(X0 = 1, ilr_x_obs)
   ilr_y_obs <- ilr_y + eps_xy[, 3:4]
   
   # transform observed to PSD (%)
@@ -80,7 +80,7 @@ sim_data_simplex <- function(
     )
   )
   ilr_x_obs_new <- ilr_x_new + eps_xy_new[, 1:2]
-  ilr_x_obs_new <- mutate(ilr_x_obs_new, X0 = 1, .before = X1) # intercept
+  ilr_x_obs_new <- cbind(X0 = 1, ilr_x_obs_new)
   ilr_y_obs_new <- ilr_y_new + eps_xy_new[, 3:4]
   psd_x_obs_new           <- data.frame(compositions::ilrInv(ilr_x_obs_new[, 2:3]))
   colnames(psd_x_obs_new) <- c("x_obs_clay","x_obs_silt","x_obs_sand")
