@@ -49,13 +49,52 @@ predx_linreg <- function(draws, newdata, level = .95) {
     summarise(
       .by     = uniqueid, 
       yhat    = mean(eta),
-      yhat_ll = quantile(ydraw, (1 - level) / 2),
-      yhat_ul = quantile(ydraw, 1 - (1 - level) / 2)
+      yhat_ll = unname(quantile(ydraw, (1 - level) / 2)),
+      yhat_ul = unname(quantile(ydraw, 1 - (1 - level) / 2))
     )
   
   newdata %>% 
     select(uniqueid, y_true, y_obs) %>%
     left_join(yhat, by = "uniqueid")
+}
+
+#' @title predx_linreg
+#' @description
+#' Actual prediction function for the linear models
+#' @param draws ....
+#' @param newdata ....
+#' @param level ....
+# Install if necessary: install.packages("matrixStats")
+
+predx_linreg_matrix <- function(draws, newdata, level = .95) {
+  N <- nrow(newdata)
+  D <- nrow(draws)
+  
+  # 1. Matrix multiplication for the linear predictor 'eta'
+  X <- cbind(1, newdata$x_obs)
+  B <- cbind(draws$b_Intercept, draws$b_x_obs)
+  eta_mat <- X %*% t(B) 
+  
+  # 2. Generate posterior predictive distributions (ydraw)
+  noise <- rnorm(N * D, mean = 0, sd = rep(draws$sigma, each = N))
+  ydraw_mat <- eta_mat + matrix(noise, nrow = N, ncol = D)
+  
+  # 3. Calculate point predictions and intervals natively
+  yhat <- rowMeans(eta_mat)
+  
+  # 4. Compute both quantiles simultaneously in C
+  quants <- matrixStats::rowQuantiles(
+    ydraw_mat, 
+    probs = c((1 - level) / 2, 1 - (1 - level) / 2)
+  )
+  
+  # 5. Attach back to the original data
+  newdata$yhat    <- yhat
+  newdata$yhat_ll <- quants[, 1]
+  newdata$yhat_ul <- quants[, 2]
+  
+  newdata %>% 
+    select(uniqueid, y_true, y_obs, yhat, yhat_ll, yhat_ul)
 }
 
 
