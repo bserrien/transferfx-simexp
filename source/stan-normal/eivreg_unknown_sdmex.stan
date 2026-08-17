@@ -51,10 +51,12 @@ model {
 
 generated quantities {
   // not used for now (needed for WAIC)
-  // vector[N] y_rep = to_vector(
-  //   normal_rng(b_Intercept + b_x_obs * tilde_mu, sd_yobs)
-  // );
-  // vector[N] log_lik = normal_lpdf(
-  //   y_obs | b_Intercept + b_x_obs * tilde_mu, sd_yobs
-  // );
+  // vector[N] y_rep;
+  // vector[N] log_lik;
+  // for (n in 1:N) {
+  //   y_rep[n] = normal_rng(b_Intercept + b_x_obs * tilde_mu[n], sd_yobs);
+  //   log_lik[n] = normal_lpdf(
+  //     y_obs[n] | b_Intercept + b_x_obs * tilde_mu[n], sd_yobs
+  //   );
+  // }
 }
