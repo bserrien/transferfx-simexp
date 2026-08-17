@@ -62,7 +62,7 @@ sim_data_gamma <- function(
   mu_y_val   <- exp(alpha + beta * log(x_true_val))
   y_true_val <- rgamma(Nval, shape = cv_y^(-2), rate = cv_y^(-2) / mu_y_val)
   Zval       <- MASS::mvrnorm(Nval, mu = c(0, 0), Sigma = Sigma)
-  Uval       <- pnorm(Z)
+  Uval       <- pnorm(Zval)
   eps1_val   <- qgamma(Uval[, 1], shape=cv_mex_val^(-2), rate=cv_mex_val^(-2))
   eps2_val   <- qgamma(Uval[, 2], shape=cv_mey_val^(-2), rate=cv_mey_val^(-2))
   x_obs_val  <- x_true_val * eps1_val
