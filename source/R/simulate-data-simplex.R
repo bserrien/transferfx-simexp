@@ -93,8 +93,9 @@ sim_data_simplex <- function(
     N = N,
     K = 2, # ILR(3-dimensional simplex) = 2-dimensional
     J = 3, # predictors: intercept + 2-dimensional ILR
-    ilr_x_obs = ilr_x_obs, # predictor variables
-    ilr_y_obs = ilr_y_obs, # outcome variables
+    # Coerce to matrices for Stan stability
+    ilr_x_obs = as.matrix(ilr_x_obs), 
+    ilr_y_obs = as.matrix(ilr_y_obs),
     # data.frame with latent and observed values of both methods in % (inv-ILR)
     psd = cbind(id = 1:N, psd, psd_obs),
     # validation data
