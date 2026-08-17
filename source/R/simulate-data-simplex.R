@@ -121,7 +121,7 @@ spc <- data.frame(
 
 b <- psd$psd %>%
   pivot_longer_spec(spc) %>%
-  ggtern(aes(silt, clay, sand, group = id)) +
+  ggtern::ggtern(aes(silt, clay, sand, group = id)) +
   facet_wrap(~ obs) +
   geom_point(aes(color = method)) + geom_line(alpha = .2)
 
@@ -201,7 +201,7 @@ idx <- sample(1:nrow(preds_psd), 2)
 psd$psd_new[idx, ] %>% select(contains("y_")) %>% print()
 preds_psd[idx, ] %>% print()
 preds_psd[idx, ] %>%
-  ggtern(aes(silt_hat, clay_hat, sand_hat)) +
+  ggtern::ggtern(aes(silt_hat, clay_hat, sand_hat)) +
   geom_point() +
   geom_errorbarL(aes(Lmin = silt_ll, Lmax = silt_ul)) +
   geom_errorbarT(aes(Tmin = clay_ll, Tmax = clay_ul)) +
