@@ -33,7 +33,11 @@ model {
 generated quantities {
   // predictions for new observations
   vector[N_new] y_new_rep;
+  vector[N_new] mu_mean_new; // Stores the corrected conditional mean
+  
   for (i in 1:N_new) {
+    // Posterior predictive distribution (simulated observable data)
     y_new_rep[i] = exp(normal_rng(beta0 + beta1 * x_obs_new_log[i], sigma));
-  }
-}
+    // Expected value E[y|x] (incorporates the log-normal variance correction)
+    mu_mean_new[i] = exp(beta0 + beta1 * x_obs_new_log[i] + 0.5 * square(sigma));
+  }}
