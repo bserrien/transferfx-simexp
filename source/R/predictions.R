@@ -26,7 +26,7 @@ predict_linreg <- function(draws_df, new_data) {
   
   # apply function to make predictions
   preds <- draws_list %>%
-    mutate(preds = purrr::map2(draws, validation_data, predx_linreg)) %>%
+    mutate(preds = purrr::map2(draws, validation_data, predx_linreg_matrix)) %>%
     select(.rep, preds) %>%
     unnest(preds)
   return(preds)
@@ -79,10 +79,22 @@ predx_linreg_matrix <- function(draws, newdata, level = .95) {
   noise <- rnorm(N * D, mean = 0, sd = rep(draws$sigma, each = N))
   ydraw_mat <- eta_mat + matrix(noise, nrow = N, ncol = D)
   
-  # 3. Calculate point predictions and intervals natively
+  # 3. Calculate EXACT Pointwise LPPD for the validation data
+  log_lik_mat <- matrix(NA_real_, nrow = N, ncol = D)
+  for (d in 1:D) {
+    # Evaluate density of the TRUE unseen observation (y_obs) against the posterior
+    log_lik_mat[, d] <- dnorm(
+      x    = newdata$y_obs, 
+      mean = eta_mat[, d], 
+      sd   = draws$sigma[d], 
+      log  = TRUE
+    )
+  }
+  # Log-sum-exp trick to average probabilities safely
+  lppd_pointwise <- matrixStats::rowLogSumExps(log_lik_mat) - log(D)
+
+  # 4. Calculate point predictions and intervals
   yhat <- rowMeans(eta_mat)
-  
-  # 4. Compute both quantiles simultaneously in C
   quants <- matrixStats::rowQuantiles(
     ydraw_mat, 
     probs = c((1 - level) / 2, 1 - (1 - level) / 2)
@@ -92,9 +104,10 @@ predx_linreg_matrix <- function(draws, newdata, level = .95) {
   newdata$yhat    <- yhat
   newdata$yhat_ll <- quants[, 1]
   newdata$yhat_ul <- quants[, 2]
-  
+  newdata$lppd    <- lppd_pointwise
+
   newdata %>% 
-    select(uniqueid, y_true, y_obs, yhat, yhat_ll, yhat_ul)
+    select(uniqueid, y_true, y_obs, yhat, yhat_ll, yhat_ul, lppd)
 }
 
 
@@ -122,7 +135,7 @@ predict_eivreg <- function(draws_df, new_data) {
   
   # apply function to make predictions
   preds <- draws_list %>%
-    mutate(preds = purrr::map2(draws, validation_data, predx_eivreg)) %>%
+    mutate(preds = purrr::map2(draws, validation_data, predx_eivreg_matrix)) %>%
     select(.rep, preds) %>%
     unnest(preds)
   return(preds)
@@ -148,8 +161,8 @@ predx_eivreg <- function(draws, newdata, level = .95) {
     summarise(
       .by     = uniqueid, 
       yhat    = mean(eta),
-      yhat_ll = quantile(ydraw, (1 - level) / 2),
-      yhat_ul = quantile(ydraw, 1 - (1 - level) / 2)
+      yhat_ll = unname(quantile(ydraw, (1 - level) / 2)),
+      yhat_ul = unname(quantile(ydraw, 1 - (1 - level) / 2))
     )
   
   newdata %>% 
@@ -157,7 +170,52 @@ predx_eivreg <- function(draws, newdata, level = .95) {
     left_join(yhat, by = "uniqueid")
 }
 
-
+predx_eivreg_matrix <- function(draws, newdata, level = .95) {
+  N <- nrow(newdata)
+  D <- nrow(draws)
+  
+  # 1. Distribute terms to isolate the intercept and slope components
+  eff_intercept <- draws$b_Intercept + 
+    (draws$b_x_obs * draws$tilde_v * draws$inv_var_x * draws$mu_x)
+  eff_slope     <- draws$b_x_obs * draws$tilde_v * draws$inv_var_mex
+  
+  # 2. Matrix multiplication for the linear predictor 'eta'
+  X <- cbind(1, newdata$x_obs)
+  B <- cbind(eff_intercept, eff_slope)
+  eta_mat <- X %*% t(B) 
+  
+  # 3. Generate posterior predictive distributions (ydraw)
+  noise <- rnorm(N * D, mean = 0, sd = rep(draws$sd_yobs, each = N))
+  ydraw_mat <- eta_mat + matrix(noise, nrow = N, ncol = D)
+  
+  # 4. Calculate EXACT Pointwise LPPD for the validation data
+  log_lik_mat <- matrix(NA_real_, nrow = N, ncol = D)
+  for (d in 1:D) {
+    log_lik_mat[, d] <- dnorm(
+      x    = newdata$y_obs, 
+      mean = eta_mat[, d], 
+      sd   = draws$sd_yobs[d], 
+      log  = TRUE
+    )
+  }
+  lppd_pointwise <- matrixStats::rowLogSumExps(log_lik_mat) - log(D)
+  
+  # 5. Calculate point predictions and intervals
+  yhat <- rowMeans(eta_mat)
+  quants <- matrixStats::rowQuantiles(
+    ydraw_mat, 
+    probs = c((1 - level) / 2, 1 - (1 - level) / 2)
+  )
+  
+  # 6. Attach back to the original data
+  newdata$yhat    <- yhat
+  newdata$yhat_ll <- quants[, 1]
+  newdata$yhat_ul <- quants[, 2]
+  newdata$lppd    <- lppd_pointwise
+  
+  newdata %>% 
+    select(uniqueid, y_true, y_obs, yhat, yhat_ll, yhat_ul, lppd)
+}
 
 # -------------------------------------------------------------------------
 # EIV model (specific for known SD meas.err.) -----------------------------
@@ -187,7 +245,7 @@ predict_eivreg_knownsd <- function(draws_df, new_data) {
   preds <- draws_list %>%
     mutate(
       preds = purrr::pmap(list(draws, validation_data, validation_data_sdme),
-                          predx_eivreg_knownsd)
+                          predx_eivreg_knownsd_matrix)
     ) %>%
     select(.rep, preds) %>%
     unnest(preds)
@@ -218,8 +276,8 @@ predx_eivreg_knownsd <- function(draws, newdata, newdatasd, level = .95) {
     summarise(
       .by     = uniqueid, 
       yhat    = mean(eta),
-      yhat_ll = quantile(ydraw, (1 - level) / 2),
-      yhat_ul = quantile(ydraw, 1 - (1 - level) / 2)
+      yhat_ll = unname(quantile(ydraw, (1 - level) / 2)),
+      yhat_ul = unname(quantile(ydraw, 1 - (1 - level) / 2))
     )
   
   newdata %>% 
@@ -227,6 +285,56 @@ predx_eivreg_knownsd <- function(draws, newdata, newdatasd, level = .95) {
     left_join(yhat, by = "uniqueid")
 }
 
-
+predx_eivreg_knownsd_matrix <- function(draws, newdata, newdatasd, level = .95) {
+  N <- nrow(newdata)
+  D <- nrow(draws)
+  
+  # 1. Compute dynamic components based on the known validation SD
+  inv_var_mex <- 1 / (newdatasd^2)
+  tilde_v     <- 1 / (draws$inv_var_x + inv_var_mex)
+  sd_yobs     <- sqrt(draws$sigma^2 + (draws$b_x_obs^2) * tilde_v)
+  
+  # 2. Distribute terms to isolate the effective intercept and slope
+  eff_intercept <- draws$b_Intercept + 
+    (draws$b_x_obs * tilde_v * draws$inv_var_x * draws$mu_x)
+  eff_slope     <- draws$b_x_obs * tilde_v * inv_var_mex
+  
+  # 3. Matrix multiplication for the linear predictor 'eta'
+  X <- cbind(1, newdata$x_obs)
+  B <- cbind(eff_intercept, eff_slope)
+  eta_mat <- X %*% t(B) 
+  
+  # 4. Generate posterior predictive distributions (ydraw)
+  noise <- rnorm(N * D, mean = 0, sd = rep(sd_yobs, each = N))
+  ydraw_mat <- eta_mat + matrix(noise, nrow = N, ncol = D)
+  
+  # 5. Calculate EXACT Pointwise LPPD for the validation data
+  log_lik_mat <- matrix(NA_real_, nrow = N, ncol = D)
+  for (d in 1:D) {
+    log_lik_mat[, d] <- dnorm(
+      x    = newdata$y_obs, 
+      mean = eta_mat[, d], 
+      sd   = sd_yobs[d], 
+      log  = TRUE
+    )
+  }
+  lppd_pointwise <- matrixStats::rowLogSumExps(log_lik_mat) - log(D)
+  
+  # 6. Calculate point predictions and intervals
+  yhat <- rowMeans(eta_mat)
+  quants <- matrixStats::rowQuantiles(
+    ydraw_mat, 
+    probs = c((1 - level) / 2, 1 - (1 - level) / 2)
+  )
+  
+  # 7. Attach back to the original data
+  newdata$yhat    <- yhat
+  newdata$yhat_ll <- quants[, 1]
+  newdata$yhat_ul <- quants[, 2]
+  newdata$lppd    <- lppd_pointwise
+  
+  newdata %>% 
+    select(uniqueid, y_true, y_obs, yhat, yhat_ll, yhat_ul, lppd)
+}
 
 
