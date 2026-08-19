@@ -32,7 +32,8 @@ val_metrics <- function(df) {
       R2   = 1 - sum((y_obs - yhat)^2) / sum((y_obs - mean(y_obs))^2),
       SDPE = sd(yhat - y_obs),
       PICP = mean(between(y_obs, yhat_ll, yhat_ul)),
-      ELPD = sum(lppd) # Exact Expected Log Predictive Density
+      ELPD    = sum(lppd), # Exact Expected Log Predictive Density
+      ELPD_SE = sqrt(n() * var(lppd))
     )
 }
 
