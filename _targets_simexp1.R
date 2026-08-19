@@ -17,7 +17,13 @@ tar_option_set(
   controller = crew_controller_local(workers = 5)
 )
 tar_source(
-  files = here("source", "R")
+  files = c(
+    here("source/R/design-simexp-normal.R"),
+    here("source/R/simulate-data-normal.R"),
+    here("source/R/predictions.R"),
+    here("source/R/evaluate-predictions.R"),
+    here("source/R/utils.R")
+  )
 )
 
 labs <- colnames(simexp_design1)[grepl("_label", colnames(simexp_design1))]
