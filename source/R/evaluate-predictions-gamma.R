@@ -6,7 +6,17 @@
 
 #' summarise_predictions
 #' summarise predictions and bind with validation data
-summarise_predictions <- function(mcmc, data) {
+#' @param mcmc posterior draws
+#' @param data list of per-dataset Stan data lists
+#' @param family likelihood family used for the exact lppd calculation --
+#'   "gamma" for gammareg.stan and the gammareg_eiv_*.stan variants,
+#'   "normal" for gamma_linreg.stan, "lognormal" for
+#'   gamma_linreglogtrafo.stan. yhat/yhat_ll/yhat_ul stay Monte-Carlo based
+#'   off `y_new_rep` as before, regardless of family -- only lppd needs to
+#'   know the likelihood.
+summarise_predictions <- function(mcmc, data,
+                                   family = c("gamma", "normal", "lognormal")) {
+  family <- match.arg(family)
   #browser()
   preds <- mcmc %>%
     select(.rep, .dataset_id, contains("y_new_rep")) %>%
@@ -18,10 +28,12 @@ summarise_predictions <- function(mcmc, data) {
   validation_data <- data.table::rbindlist(
     lapply(data, get_validation_data)
   ) %>% mutate(.by = .dataset_id, uniqueid = 1:n())
+  lppd <- compute_lppd(mcmc, data, family = family)
   validation_data %>%
     left_join(preds, by = c(".dataset_id","uniqueid")) %>%
+    left_join(lppd,  by = c(".dataset_id","uniqueid")) %>%
     select(.rep, .dataset_id, uniqueid, 
-           y_true_new, y_obs_new, yhat, yhat_ll, yhat_ul)
+           y_true_new, y_obs_new, yhat, yhat_ll, yhat_ul, lppd)
 }
 
 #' predx_summary
@@ -81,6 +93,8 @@ val_metrics_gamma <- function(df) {
       PICP = mean(between(y_obs_new, yhat_ll, yhat_ul)),
       # specific metrics for gamma: predictions should be strictly positive
       PNEG   = mean(yhat <= 0),
-      PNEGll = mean(yhat_ll <= 0)
+      PNEGll = mean(yhat_ll <= 0),
+      ELPD    = sum(lppd),           # exact expected log predictive density
+      ELPD_SE = sqrt(n() * var(lppd))
     ) 
 }

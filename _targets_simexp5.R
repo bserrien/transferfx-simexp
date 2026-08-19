@@ -8,13 +8,24 @@ library(here) |> suppressPackageStartupMessages()
 library(quarto)
 library(crew)
 
+# Pre-compile the models sequentially
+cmdstanr::cmdstan_model(here("source/stan-gamma/gamma_linreg.stan"))
+cmdstanr::cmdstan_model(here("source/stan-gamma/gamma_linreglogtrafo.stan"))
+cmdstanr::cmdstan_model(here("source/stan-gamma/gammareg.stan"))
+cmdstanr::cmdstan_model(here("source/stan-gamma/gammareg_eiv_knowncvmex.stan"))
+cmdstanr::cmdstan_model(here("source/stan-gamma/gammareg_eiv_knowncvmex_val.stan"))
+cmdstanr::cmdstan_model(here("source/stan-gamma/gammareg_eiv_unknowncvmex.stan"))
+
+
 tar_option_set(
   controller = crew_controller_local(workers = 5)
 )
 tar_source(
   files = c(here("source/R/design-simexp-gamma.R"),
             here("source/R/simulate-data-gamma.R"),
+            here("source/R/predictions-gamma.R"),
             here("source/R/evaluate-predictions-gamma.R"),
+            here("source/R/evaluate-predictions.R"),  # for compare_models()
             here("source/R/utils.R"))
 )
 rm(tidy_scenario, reg_dilution, scenario_labeller_gamma)
@@ -36,11 +47,11 @@ list(
     # the function sim_data_gamma returns a training and a validation dataset
     tar_stan_mcmc_rep_draws(
       name       = mcmc,
-      stan_files = c(here("source/stan/gamma_linreg.stan"),
-                     here("source/stan/gamma_linreglogtrafo.stan"),
-                     here("source/stan/gammareg.stan"),
-                     here("source/stan/gammareg_eiv_knowncvmex.stan"),
-                     here("source/stan/gammareg_eiv_unknowncvmex.stan")),
+      stan_files = c(here("source/stan-gamma/gamma_linreg.stan"),
+                     here("source/stan-gamma/gamma_linreglogtrafo.stan"),
+                     here("source/stan-gamma/gammareg.stan"),
+                     here("source/stan-gamma/gammareg_eiv_knowncvmex.stan"),
+                     here("source/stan-gamma/gammareg_eiv_unknowncvmex.stan")),
       data = sim_data_gamma(
         N    = sample_size,
         cv_y = cv_y
@@ -58,19 +69,24 @@ list(
     
     # get prediction summaries per model
     tar_target(preds_linreg,
-               summarise_predictions(mcmc_gamma_linreg, mcmc_data),
+               summarise_predictions(mcmc_gamma_linreg, mcmc_data,
+                                      family = "normal"),
                pattern = map(mcmc_gamma_linreg, mcmc_data)),
     tar_target(preds_linreglogtrafo,
-               summarise_predictions(mcmc_gamma_linreglogtrafo, mcmc_data),
+               summarise_predictions(mcmc_gamma_linreglogtrafo, mcmc_data,
+                                      family = "lognormal"),
                pattern = map(mcmc_gamma_linreglogtrafo, mcmc_data)),
     tar_target(preds_gammareg,
-               summarise_predictions(mcmc_gammareg, mcmc_data),
+               summarise_predictions(mcmc_gammareg, mcmc_data,
+                                      family = "gamma"),
                pattern = map(mcmc_gammareg, mcmc_data)),
     tar_target(preds_gammaregeivknowncvmex,
-               summarise_predictions(mcmc_gammareg_eiv_knowncvmex, mcmc_data),
+               summarise_predictions(mcmc_gammareg_eiv_knowncvmex, mcmc_data,
+                                      family = "gamma"),
                pattern = map(mcmc_gammareg_eiv_knowncvmex, mcmc_data)),
     tar_target(preds_gammaregeivunknowncvmex,
-               summarise_predictions(mcmc_gammareg_eiv_unknowncvmex, mcmc_data),
+               summarise_predictions(mcmc_gammareg_eiv_unknowncvmex, mcmc_data,
+                                      family = "gamma"),
                pattern = map(mcmc_gammareg_eiv_unknowncvmex, mcmc_data)),
     
     #evaluate predictions
@@ -79,6 +95,14 @@ list(
       eval_preds_gamma(preds_linreg, preds_linreglogtrafo,
                        preds_gammareg, preds_gammaregeivknowncvmex,
                        preds_gammaregeivunknowncvmex)
+    ),
+    # paired ELPD model comparison (see compare_models() in
+    # evaluate-predictions.R)
+    tar_target(
+      predcompare,
+      compare_models(preds_linreg, preds_linreglogtrafo,
+                     preds_gammareg, preds_gammaregeivknowncvmex,
+                     preds_gammaregeivunknowncvmex)
     ),
     
     # MCMC-diagnostics
@@ -109,6 +133,11 @@ list(
   tar_combine(
     predeval_summary,
     mapped[["predeval"]],
+    command = bind_rows(!!!.x, .id = "scenario") %>% tidy_scenario_gamma()
+  ),
+  tar_combine(
+    predcompare_summary,
+    mapped[["predcompare"]],
     command = bind_rows(!!!.x, .id = "scenario") %>% tidy_scenario_gamma()
   ),
   tar_combine(
