@@ -37,4 +37,49 @@ val_metrics <- function(df) {
     )
 }
 
+#' @title compare_models
+#' @description
+#' Paired ELPD model comparison. This reproduces what loo::loo_compare()
+#' computes internally (elpd_diff = sum of pointwise differences, se_diff =
+#' sqrt(N * var(pointwise differences))) -- but pairs models on the SAME
+#' validation observation (via `uniqueid`) rather than requiring a `loo`
+#' S3 object, since the pointwise `lppd` column from predx_..._matrix()
+#' already contains everything the comparison needs. Pairing matters here:
+#' it gives a tighter, more appropriate SE than treating each model's ELPD
+#' as independent, since both models are evaluated on identical held-out
+#' points.
+#' @param ... set of models to compare, passed as different arguments
+#'   (same convention as eval_preds())
+compare_models <- function(...) {
+  preds        <- list(...)
+  names(preds) <- stringr::str_split_i(
+    as.character(as.list(substitute(list(...)))[-1]),
+    "_", 2
+  )
+  for (i in seq_along(preds)) {
+    preds[[i]] <- preds[[i]] %>%
+      mutate(model = names(preds)[i])
+  }
+  long <- data.table::rbindlist(preds, use.names = TRUE, fill = TRUE) %>%
+    select(model, .rep, uniqueid, lppd)
+
+  model_names <- names(preds)
+  pairs <- utils::combn(model_names, 2, simplify = FALSE)
+
+  purrr::map_dfr(pairs, function(p) {
+    long %>%
+      filter(model %in% p) %>%
+      tidyr::pivot_wider(names_from = model, values_from = lppd) %>%
+      mutate(diff = .data[[p[1]]] - .data[[p[2]]]) %>%
+      summarise(
+        .by       = .rep,
+        model_a   = p[1],
+        model_b   = p[2],
+        n         = n(),
+        elpd_diff = sum(diff),
+        se_diff   = sqrt(n * var(diff))
+      )
+  })
+}
+
 
