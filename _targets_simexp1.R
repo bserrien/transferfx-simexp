@@ -8,6 +8,11 @@ library(here) |> suppressPackageStartupMessages()
 library(quarto)
 library(crew)
 
+# Pre-compile the models sequentially
+cmdstanr::cmdstan_model(here("source/stan-normal/linreg.stan"))
+cmdstanr::cmdstan_model(here("source/stan-normal/eivreg_known_sdmex.stan"))
+cmdstanr::cmdstan_model(here("source/stan-normal/eivreg_unknown_sdmex.stan"))
+
 tar_option_set(
   controller = crew_controller_local(workers = 5)
 )
