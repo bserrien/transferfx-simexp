@@ -78,7 +78,7 @@ list(
                predict_linreg(mcmc_linreg, mcmc_data),
                pattern = map(mcmc_linreg, mcmc_data)),
     tar_target(preds_eivreg1,
-               predict_eivreg(mcmc_eivreg_known_sdmex, mcmc_data),
+               predict_eivreg_knownsd(mcmc_eivreg_known_sdmex, mcmc_data),
                pattern = map(mcmc_eivreg_known_sdmex, mcmc_data)),
     tar_target(preds_eivreg2,
                predict_eivreg(mcmc_eivreg_unknown_sdmex, mcmc_data),
