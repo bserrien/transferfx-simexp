@@ -37,9 +37,9 @@ list(
     # the function sim_data returns both a training and a validation dataset
     tar_stan_mcmc_rep_draws(
       name       = mcmc,
-      stan_files = c(here("source/stan/linreg.stan"),
-                     here("source/stan/eivreg_known_sdmex.stan"),
-                     here("source/stan/eivreg_unknown_sdmex.stan")),
+      stan_files = c(here("source/stan-normal/linreg.stan"),
+                     here("source/stan-normal/eivreg_known_sdmex.stan"),
+                     here("source/stan-normal/eivreg_unknown_sdmex.stan")),
       data = sim_data(
         N                  = sample_size,
         ratio_sdmex_sigmax = ratio_sdmex_sigmax,
