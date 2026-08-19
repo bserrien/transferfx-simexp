@@ -81,6 +81,12 @@ list(
       predeval,
       eval_preds(preds_linreg, preds_eivreg1, preds_eivreg2)
     ),
+    # paired ELPD model comparison (see compare_models() in
+    # evaluate-predictions.R)
+    tar_target(
+      predcompare,
+      compare_models(preds_linreg, preds_eivreg1, preds_eivreg2)
+    ),
     
     # MCMC-diagnostics
     tar_target(mcmcdx_linreg, 
@@ -102,6 +108,11 @@ list(
   tar_combine(
     predeval_summary,
     mapped[["predeval"]],
+    command = bind_rows(!!!.x, .id = "scenario") %>% tidy_scenario()
+  ),
+  tar_combine(
+    predcompare_summary,
+    mapped[["predcompare"]],
     command = bind_rows(!!!.x, .id = "scenario") %>% tidy_scenario()
   ),
   tar_combine(
