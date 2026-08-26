@@ -62,7 +62,7 @@ sim_data_gamma <- function(
   mu_y_val   <- exp(alpha + beta * log(x_true_val))
   y_true_val <- rgamma(Nval, shape = cv_y^(-2), rate = cv_y^(-2) / mu_y_val)
   Zval       <- MASS::mvrnorm(Nval, mu = c(0, 0), Sigma = Sigma)
-  Uval       <- pnorm(Z)
+  Uval       <- pnorm(Zval)
   eps1_val   <- qgamma(Uval[, 1], shape=cv_mex_val^(-2), rate=cv_mex_val^(-2))
   eps2_val   <- qgamma(Uval[, 2], shape=cv_mey_val^(-2), rate=cv_mey_val^(-2))
   x_obs_val  <- x_true_val * eps1_val
@@ -91,7 +91,9 @@ sim_data_gamma <- function(
     y_true_new = y_true_val, # not used by STAN
     x_obs_new  = x_obs_val,
     y_obs_new  = y_obs_val,   # not used by STAN
-    cv_mex_val = cv_mex_val  # only for use in the EIV-model with known CV in the validation data
+    cv_mex_val = cv_mex_val,  # only for use in the EIV-model with known CV in the validation data
+    # Appending the validation data frame to the output list
+    validation_data = data_val # not used by STAN
   )
   
   return(df_stan)

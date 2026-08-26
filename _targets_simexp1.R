@@ -8,11 +8,22 @@ library(here) |> suppressPackageStartupMessages()
 library(quarto)
 library(crew)
 
+# Pre-compile the models sequentially
+cmdstanr::cmdstan_model(here("source/stan-normal/linreg.stan"))
+cmdstanr::cmdstan_model(here("source/stan-normal/eivreg_known_sdmex.stan"))
+cmdstanr::cmdstan_model(here("source/stan-normal/eivreg_unknown_sdmex.stan"))
+
 tar_option_set(
   controller = crew_controller_local(workers = 5)
 )
 tar_source(
-  files = here("source", "R")
+  files = c(
+    here("source/R/design-simexp-normal.R"),
+    here("source/R/simulate-data-normal.R"),
+    here("source/R/predictions.R"),
+    here("source/R/evaluate-predictions.R"),
+    here("source/R/utils.R")
+  )
 )
 
 labs <- colnames(simexp_design1)[grepl("_label", colnames(simexp_design1))]
@@ -32,9 +43,9 @@ list(
     # the function sim_data returns both a training and a validation dataset
     tar_stan_mcmc_rep_draws(
       name       = mcmc,
-      stan_files = c(here("source/stan/linreg.stan"),
-                     here("source/stan/eivreg_known_sdmex.stan"),
-                     here("source/stan/eivreg_unknown_sdmex.stan")),
+      stan_files = c(here("source/stan-normal/linreg.stan"),
+                     here("source/stan-normal/eivreg_known_sdmex.stan"),
+                     here("source/stan-normal/eivreg_unknown_sdmex.stan")),
       data = sim_data(
         N                  = sample_size,
         ratio_sdmex_sigmax = ratio_sdmex_sigmax,
@@ -76,6 +87,12 @@ list(
       predeval,
       eval_preds(preds_linreg, preds_eivreg1, preds_eivreg2)
     ),
+    # paired ELPD model comparison (see compare_models() in
+    # evaluate-predictions.R)
+    tar_target(
+      predcompare,
+      compare_models(preds_linreg, preds_eivreg1, preds_eivreg2)
+    ),
     
     # MCMC-diagnostics
     tar_target(mcmcdx_linreg, 
@@ -97,6 +114,11 @@ list(
   tar_combine(
     predeval_summary,
     mapped[["predeval"]],
+    command = bind_rows(!!!.x, .id = "scenario") %>% tidy_scenario()
+  ),
+  tar_combine(
+    predcompare_summary,
+    mapped[["predcompare"]],
     command = bind_rows(!!!.x, .id = "scenario") %>% tidy_scenario()
   ),
   tar_combine(

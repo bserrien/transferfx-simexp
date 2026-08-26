@@ -29,8 +29,8 @@ sim_data <- function(
   )
   xy_obs <- switch(
     tails,
-    normal = c(x_true, y_true) + MASS::mvrnorm(N, c(0, 0), varme),
-    tdf3   = c(x_true, y_true) + mvtnorm::rmvt(N, 1/3*sqrt(varme), df = 3)
+    normal = cbind(x_true, y_true) + MASS::mvrnorm(N, c(0, 0), varme),
+    tdf3   = cbind(x_true, y_true) + mvtnorm::rmvt(N, varme / 3, df = 3)
     # see the help file of mvtnorm::rmvt for why the 1/3 scaler is added
   )
   
@@ -54,8 +54,8 @@ sim_data <- function(
   )
   xy_val_obs <- switch(
     tails,
-    normal = c(x_val, y_val) + MASS::mvrnorm(Nval, c(0, 0), varme_v),
-    tdf3   = c(x_val, y_val) + mvtnorm::rmvt(Nval, 1/3*sqrt(varme_v), df = 3)
+    normal = cbind(x_val, y_val) + MASS::mvrnorm(Nval, c(0, 0), varme_v),
+    tdf3   = cbind(x_val, y_val) + mvtnorm::rmvt(Nval, varme_v / 3, df = 3)
   )
   data_val <- data.frame(
     uniqueid = 1:Nval, # observation ID, useful for joining

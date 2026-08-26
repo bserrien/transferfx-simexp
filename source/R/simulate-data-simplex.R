@@ -46,7 +46,7 @@ sim_data_simplex <- function(
     )
   )
   ilr_x_obs <- ilr_x + eps_xy[, 1:2]
-  ilr_x_obs <- mutate(ilr_x_obs, X0 = 1, .before = X1) # intercept
+  ilr_x_obs <- cbind(X0 = 1, ilr_x_obs)
   ilr_y_obs <- ilr_y + eps_xy[, 3:4]
   
   # transform observed to PSD (%)
@@ -80,7 +80,7 @@ sim_data_simplex <- function(
     )
   )
   ilr_x_obs_new <- ilr_x_new + eps_xy_new[, 1:2]
-  ilr_x_obs_new <- mutate(ilr_x_obs_new, X0 = 1, .before = X1) # intercept
+  ilr_x_obs_new <- cbind(X0 = 1, ilr_x_obs_new)
   ilr_y_obs_new <- ilr_y_new + eps_xy_new[, 3:4]
   psd_x_obs_new           <- data.frame(compositions::ilrInv(ilr_x_obs_new[, 2:3]))
   colnames(psd_x_obs_new) <- c("x_obs_clay","x_obs_silt","x_obs_sand")
@@ -93,8 +93,9 @@ sim_data_simplex <- function(
     N = N,
     K = 2, # ILR(3-dimensional simplex) = 2-dimensional
     J = 3, # predictors: intercept + 2-dimensional ILR
-    ilr_x_obs = ilr_x_obs, # predictor variables
-    ilr_y_obs = ilr_y_obs, # outcome variables
+    # Coerce to matrices for Stan stability
+    ilr_x_obs = as.matrix(ilr_x_obs), 
+    ilr_y_obs = as.matrix(ilr_y_obs),
     # data.frame with latent and observed values of both methods in % (inv-ILR)
     psd = cbind(id = 1:N, psd, psd_obs),
     # validation data
@@ -121,7 +122,7 @@ spc <- data.frame(
 
 b <- psd$psd %>%
   pivot_longer_spec(spc) %>%
-  ggtern(aes(silt, clay, sand, group = id)) +
+  ggtern::ggtern(aes(silt, clay, sand, group = id)) +
   facet_wrap(~ obs) +
   geom_point(aes(color = method)) + geom_line(alpha = .2)
 
@@ -201,7 +202,7 @@ idx <- sample(1:nrow(preds_psd), 2)
 psd$psd_new[idx, ] %>% select(contains("y_")) %>% print()
 preds_psd[idx, ] %>% print()
 preds_psd[idx, ] %>%
-  ggtern(aes(silt_hat, clay_hat, sand_hat)) +
+  ggtern::ggtern(aes(silt_hat, clay_hat, sand_hat)) +
   geom_point() +
   geom_errorbarL(aes(Lmin = silt_ll, Lmax = silt_ul)) +
   geom_errorbarT(aes(Tmin = clay_ll, Tmax = clay_ul)) +

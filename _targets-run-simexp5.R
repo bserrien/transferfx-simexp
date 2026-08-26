@@ -11,7 +11,7 @@ library(tidyverse) |> suppressPackageStartupMessages()
 tar_visnetwork()
 #tar_visnetwork(physics = TRUE, targets_only = TRUE)
 
-tar_make()
+tar_make(use_crew = TRUE, as_job = TRUE)
 #tar_make(callr_function = NULL, use_crew = FALSE, as_job = FALSE)
 
 
